@@ -9,6 +9,7 @@
 #include "Pre_ACANSOutput.h"
 #include "Pre_MPCNSOutput.h"
 #include <math.h>
+#include <memory>
 
 // #include "0_ARRAY_DEFINE.h"
 // #include "1_Preprocess_Parameter.h"
@@ -19,7 +20,7 @@
 // #include "preprocess_grid.h"
 
 #if MPCNS_Para_COUT == 1
-CRITICAL_SECTION g_Cs;
+std::mutex g_Cs;
 #endif
 
 int main(int arg, char **argv)
@@ -32,9 +33,6 @@ int main(int arg, char **argv)
 //=================================================================================================
 // MPCNS_IF_MPI=1才会生效，mpi初始化
 #if MPCNS_IF_MPI == 1
-#if MPCNS_Para_COUT == 1
-    InitializeCriticalSection(&g_Cs);
-#endif
     DATATRANS::mpi_initial(arg, argv);
     DATATRANS::mpi_rank(&myid);
 #endif
@@ -42,7 +40,7 @@ int main(int arg, char **argv)
 
     //=================================================================================================
     // 所有进程都读入参数，存入Param的数据结构中
-    Param *par = new Param;
+    std::unique_ptr<Param> par(new Param);
     par->ReadParam(myid);
     //=================================================================================================
 
@@ -58,27 +56,26 @@ int main(int arg, char **argv)
         std::cout << "\t-->The input setup file has been read successfully ! ! !\n";
         //-------------------------------------------------------------------------------
         std::cout << "---->(2) Reading the inp file...\n";
-        Preprocess_Data_Structure *ptr = new Preprocess_Data_Structure;
-        ptr->read_inp(par);
+        std::unique_ptr<Preprocess_Data_Structure> ptr(new Preprocess_Data_Structure);
+        ptr->read_inp(par.get());
         std::cout << "\t-->Grid and inp files have been processed ! ! !\n";
         //-------------------------------------------------------------------------------
         std::cout << "---->(3) Splitting the large grid blocks...\n";
-        Split(ptr, par);
+        Split(ptr.get(), par.get());
         std::cout << "\t-->The blocks have been split ! ! !\n";
         //-------------------------------------------------------------------------------
         std::cout << "---->(4) Settling down the grid blocks...\n";
-        Preprocess_Group grp(ptr, par);
-        grp.Metis_allocate_group(ptr, par);
+        Preprocess_Group grp(ptr.get(), par.get());
+        grp.Metis_allocate_group(ptr.get(), par.get());
         grp.Load_Balance_Output();
         std::cout << "\t-->The blocks have been grouped ! ! !\n";
         //-------------------------------------------------------------------------------
         std::cout << "---->(5) Output the grid and link information...\n";
         // 将剖分组合信息输出，从而能够并行读入，分别生成各个进程自己的几何信息
-        output_split_group_info(ptr, &grp);
+        output_split_group_info(ptr.get(), &grp);
         //---------------------------------------------------------------------
 
         std::cout << "\t-->The grid and link information have been output ^_^ \n";
-        delete ptr;
     }
 //=================================================================================================
 
@@ -103,9 +100,9 @@ int main(int arg, char **argv)
         //---------------------------------------------------------------------
         // 将剖分组合信息读入，分别生成各个进程自己的几何信息
         std::cout << "---->(5) Reading the binary split_group file...\n";
-        Preprocess_Group *grp = new Preprocess_Group;
-        Preprocess_Data_Structure *ptr = new (Preprocess_Data_Structure);
-        input_split_group_info(ptr, grp);
+        std::unique_ptr<Preprocess_Group> grp(new Preprocess_Group);
+        std::unique_ptr<Preprocess_Data_Structure> ptr(new Preprocess_Data_Structure);
+        input_split_group_info(ptr.get(), grp.get());
         std::cout << "\t-->Successfully reading the binary split_group file.\n";
         //---------------------------------------------------------------------
         // 为了防止错误，这里检测周期边界条件
@@ -132,9 +129,8 @@ int main(int arg, char **argv)
         //---------------------------------------------------------------------
         // 开始生成各个进程的网格并输出到文件，形成原始的grd、boundary_condition文本文件
         std::cout << "---->(6) Starting to ouput the ACANS geometry txt information...\n";
-        OUTPUT_ACANS *opt = new OUTPUT_ACANS(ptr, par, grp);
+        std::unique_ptr<OUTPUT_ACANS> opt(new OUTPUT_ACANS(ptr.get(), par.get(), grp.get()));
         opt->output();
-        delete opt, ptr, grp;
         std::cout << "\t-->The ACANS geometry txt files have been ouput...\n";
 #else
         int32_t process_number = 0;
@@ -151,9 +147,9 @@ int main(int arg, char **argv)
             //---------------------------------------------------------------------
             // 将剖分组合信息读入，分别生成各个进程自己的几何信息
             std::cout << "---->(5) Reading the binary split_group file...\n";
-            Preprocess_Group *grp = new Preprocess_Group;
-            Preprocess_Data_Structure *ptr = new (Preprocess_Data_Structure);
-            input_split_group_info(ptr, grp);
+            std::unique_ptr<Preprocess_Group> grp(new Preprocess_Group);
+            std::unique_ptr<Preprocess_Data_Structure> ptr(new Preprocess_Data_Structure);
+            input_split_group_info(ptr.get(), grp.get());
             std::cout << "\t-->Successfully reading the binary split_group file.\n";
             //---------------------------------------------------------------------
             // 为了防止错误，这里检测周期边界条件
@@ -180,9 +176,8 @@ int main(int arg, char **argv)
             //---------------------------------------------------------------------
             // 开始生成各个进程的网格并输出到文件，形成原始的grd、boundary_condition文本文件
             std::cout << "---->(6) Starting to ouput the ACANS geometry txt information...\n";
-            OUTPUT_ACANS *opt = new OUTPUT_ACANS(ptr, par, grp);
+            std::unique_ptr<OUTPUT_ACANS> opt(new OUTPUT_ACANS(ptr.get(), par.get(), grp.get()));
             opt->output();
-            delete opt, ptr, grp;
             std::cout << "\t-->The ACANS geometry txt files have been ouput...\n";
         }
 #endif
@@ -203,19 +198,18 @@ int main(int arg, char **argv)
         //---------------------------------------------------------------------
         // 将剖分组合信息读入，生成几何信息
         std::cout << "---->(5) Reading the binary split_group file...\n";
-        Preprocess_Group *grp = new Preprocess_Group;
-        Preprocess_Data_Structure *ptr = new (Preprocess_Data_Structure);
-        input_split_group_info(ptr, grp);
+        std::unique_ptr<Preprocess_Group> grp(new Preprocess_Group);
+        std::unique_ptr<Preprocess_Data_Structure> ptr(new Preprocess_Data_Structure);
+        input_split_group_info(ptr.get(), grp.get());
         std::cout << "\t-->Successfully reading the binary split_group file.\n";
         //---------------------------------------------------------------------
         // 开始生成各个进程的网格并输出到文件，形成原始的grd、boundary_condition文本文件
         std::cout << "---->(6) Starting to ouput the MPCNS geometry txt information...\n";
-        OUTPUT_MPCNS *opt = new OUTPUT_MPCNS(ptr, par, grp);
+        std::unique_ptr<OUTPUT_MPCNS> opt(new OUTPUT_MPCNS(ptr.get(), par.get(), grp.get()));
 
         for (int32_t myid_num = 0; myid_num < par->GetInt("proc_num"); myid_num++)
             opt->output(myid_num);
 
-        delete opt, ptr, grp;
         std::cout << "\t-->The MPCNS geometry txt files have been ouput...\n";
 #else
         int32_t process_number = 0;
@@ -231,9 +225,9 @@ int main(int arg, char **argv)
         // 将剖分组合信息读入，分别生成各个进程自己的几何信息
         if (myid == 0)
             std::cout << "---->(5) Reading the binary split_group file...\n";
-        Preprocess_Group *grp = new Preprocess_Group;
-        Preprocess_Data_Structure *ptr = new (Preprocess_Data_Structure);
-        input_split_group_info(ptr, grp);
+        std::unique_ptr<Preprocess_Group> grp(new Preprocess_Group);
+        std::unique_ptr<Preprocess_Data_Structure> ptr(new Preprocess_Data_Structure);
+        input_split_group_info(ptr.get(), grp.get());
         DATATRANS::mpi_barrier();
         if (myid == 0)
             std::cout << "\t-->Successfully reading the binary split_group file!\n";
@@ -241,7 +235,7 @@ int main(int arg, char **argv)
         // 开始【并行】生成各个进程的网格并输出到文件，形成原始的grd、boundary_condition文本文件
         if (myid == 0)
             std::cout << "---->(6) Starting to ouput the MPCNS geometry txt information...\n";
-        OUTPUT_MPCNS *opt = new OUTPUT_MPCNS(ptr, par, grp);
+        std::unique_ptr<OUTPUT_MPCNS> opt(new OUTPUT_MPCNS(ptr.get(), par.get(), grp.get()));
 
         if (process_number > proc_num)
         {
@@ -257,7 +251,6 @@ int main(int arg, char **argv)
             }
         }
 
-        delete ptr, grp, opt;
         DATATRANS::mpi_barrier();
         if (myid == 0)
             std::cout << "\t-->The MPCNS geometry txt files have been ouput...\n";
@@ -293,7 +286,9 @@ int main(int arg, char **argv)
     //     preprocess_output *opt = new OUTPUT_MPCNS;
     //     opt->build_parallel(ptr, par, grp, myid);
     //     opt->output_parallel();
-    //     delete ptr, grp, opt;
+    //     delete ptr;
+    //     delete grp;
+    //     delete opt;
     //     DATATRANS::mpi_barrier();
     //     if (myid == 0)
     //         std::cout << "\t-->The ACANS/MPCNS geometry txt files have been ouput...\n";
@@ -343,7 +338,9 @@ int main(int arg, char **argv)
     //         preprocess_output *opt = new OUTPUT_MPCNS;
     //         opt->build(ptr, par, grp);
     //         opt->output();
-    //         delete opt, ptr, grp;
+    //         delete opt;
+    //         delete ptr;
+    //         delete grp;
     //         std::cout << "\t-->The ACANS/MPCNS geometry txt files have been ouput...\n";
     //     }
     // }
@@ -399,12 +396,13 @@ int main(int arg, char **argv)
     //         preprocess_output *opt = new OUTPUT_ACANS;
     //         opt->build(ptr, par, grp);
     //         opt->output();
-    //         delete opt, ptr, grp;
+    //         delete opt;
+    //         delete ptr;
+    //         delete grp;
     //         std::cout << "\t-->The ACANS/MPCNS geometry txt files have been ouput...\n";
     //     }
     // }
 
-    delete par;
     if (myid == 0)
         std::cout << "^_^ You can press any key to continue ^_^ \n";
 

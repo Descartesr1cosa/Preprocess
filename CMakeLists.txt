@@ -4,7 +4,7 @@ project(MPCNS LANGUAGES CXX)
 
 option(MPCNS_ENABLE_MPI "Build with MPI support" OFF)
 option(MPCNS_ENABLE_METIS "Build with METIS graph partitioning support" OFF)
-option(MPCNS_ENABLE_WINDOWS_SAFE_COUT "Use Windows CRITICAL_SECTION for parallel cout" OFF)
+option(MPCNS_ENABLE_SAFE_COUT "Use a mutex for parallel cout" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -64,7 +64,7 @@ else()
     target_compile_definitions(MAIN PRIVATE MPCNS_IF_METIS=0)
 endif()
 
-if(MPCNS_ENABLE_WINDOWS_SAFE_COUT)
+if(MPCNS_ENABLE_SAFE_COUT)
     target_compile_definitions(MAIN PRIVATE MPCNS_Para_COUT=1)
 else()
     target_compile_definitions(MAIN PRIVATE MPCNS_Para_COUT=0)

@@ -213,7 +213,12 @@ void Preprocess_Group::Metis_allocate_group(Preprocess_Data_Structure *ptr, Para
         }
     }
 
-    delete[] xadj, adjncy, vwgt, adjwgt, objval, part;
+    delete[] xadj;
+    delete[] adjncy;
+    delete[] vwgt;
+    delete[] adjwgt;
+    delete objval;
+    delete[] part;
 #endif
 }
 

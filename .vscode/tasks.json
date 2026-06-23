@@ -12,7 +12,7 @@
                 "${workspaceFolder}/build",
                 "-DMPCNS_ENABLE_METIS=OFF",
                 "-DMPCNS_ENABLE_MPI=OFF",
-                "-DMPCNS_ENABLE_WINDOWS_SAFE_COUT=OFF"
+                "-DMPCNS_ENABLE_SAFE_COUT=OFF"
             ],
             "problemMatcher": []
         },

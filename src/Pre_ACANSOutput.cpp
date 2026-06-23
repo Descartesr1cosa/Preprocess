@@ -552,7 +552,9 @@ void OUTPUT_ACANS::output_gridfile()
                         }
                     }
                     file_temp.close();
-                    delete[] mx, my, mz;
+                    delete[] mx;
+                    delete[] my;
+                    delete[] mz;
                     // 读入原始网格文件结束
                     //==================================================
                     int32_t ijk[3], sub[3], sup[3], tar_sub[3], tar_sup[3], Transform[3];
@@ -634,7 +636,9 @@ void OUTPUT_ACANS::output_gridfile()
                         }
                     }
                     file_temp.close();
-                    delete[] mx, my, mz;
+                    delete[] mx;
+                    delete[] my;
+                    delete[] mz;
                     // 读入原始网格文件结束
                     //==================================================
                     int32_t ijk[3], sub[3], sup[3], tar_sub[3], tar_sup[3], Transform[3];

@@ -42,10 +42,10 @@ void OUTPUT_MPCNS::output_boundary_file(int32_t my_id)
 
     file.close();
 #if MPCNS_Para_COUT == 1
-    EnterCriticalSection(&g_Cs);
+    g_Cs.lock();
     std::cout << "\t\tFinish output the Boundary file\t"
               << "boundary" + _my_id_s + ".txt\n";
-    LeaveCriticalSection(&g_Cs);
+    g_Cs.unlock();
 #else
     std::cout << "\t\tFinish output the Boundary file\t"
               << "boundary" + _my_id_s + ".txt\n";
@@ -136,10 +136,10 @@ void OUTPUT_MPCNS::output_inner_file(int32_t my_id)
     delete[] count_blk;
 
 #if MPCNS_Para_COUT == 1
-    EnterCriticalSection(&g_Cs);
+    g_Cs.lock();
     std::cout << "\t\tFinish output the Inner file\t"
               << "inner" + _my_id_s + ".txt\n";
-    LeaveCriticalSection(&g_Cs);
+    g_Cs.unlock();
 #else
     std::cout << "\t\tFinish output the Inner file\t"
               << "inner" + _my_id_s + ".txt\n";
@@ -302,10 +302,10 @@ void OUTPUT_MPCNS::output_parallel_file(int32_t my_id)
     delete[] count_blk;
 
 #if MPCNS_Para_COUT == 1
-    EnterCriticalSection(&g_Cs);
+    g_Cs.lock();
     std::cout << "\t\tFinish output the Parallel file\t"
               << "parallel" + _my_id_s + ".txt\n";
-    LeaveCriticalSection(&g_Cs);
+    g_Cs.unlock();
 #else
     std::cout << "\t\tFinish output the Parallel file\t"
               << "parallel" + _my_id_s + ".txt\n";
@@ -534,7 +534,9 @@ void OUTPUT_MPCNS::output_gridfile(int32_t my_id)
                     }
                 }
                 file_temp.close();
-                delete[] mx, my, mz;
+                delete[] mx;
+                delete[] my;
+                delete[] mz;
                 // 读入原始网格文件结束
                 //==================================================
                 int32_t ijk[3], sub[3], sup[3], tar_sub[3], tar_sup[3], Transform[3];
@@ -616,7 +618,9 @@ void OUTPUT_MPCNS::output_gridfile(int32_t my_id)
                     }
                 }
                 file_temp.close();
-                delete[] mx, my, mz;
+                delete[] mx;
+                delete[] my;
+                delete[] mz;
                 // 读入原始网格文件结束
                 //==================================================
                 int32_t ijk[3], sub[3], sup[3], tar_sub[3], tar_sup[3], Transform[3];
@@ -780,10 +784,10 @@ void OUTPUT_MPCNS::output_gridfile(int32_t my_id)
     }
     file.close();
 #if MPCNS_Para_COUT == 1
-    EnterCriticalSection(&g_Cs);
+    g_Cs.lock();
     std::cout << "\t\tFinish output the Grid file\t"
               << "grid" + _my_id_s + ".grd\n";
-    LeaveCriticalSection(&g_Cs);
+    g_Cs.unlock();
 #else
     std::cout << "\t\tFinish output the Grid file\t"
               << "grid" + _my_id_s + ".grd\n";

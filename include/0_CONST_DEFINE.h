@@ -32,18 +32,18 @@ constexpr int LIST = 10;       // 文件结束
 #endif
 
 /*
- *@brief 如果并行,是否使用安全的并行输出，需要使用windows.h
+ *@brief 如果并行,是否使用安全的并行输出
  */
 #ifndef MPCNS_Para_COUT
-#if MPCNS_IF_MPI == 0 || !defined(_WIN32)
+#if MPCNS_IF_MPI == 0
 #define MPCNS_Para_COUT 0
 #else
 #define MPCNS_Para_COUT 1
 #endif
 #endif
 #if MPCNS_Para_COUT == 1
-#include <windows.h>
-extern CRITICAL_SECTION g_Cs;
+#include <mutex>
+extern std::mutex g_Cs;
 #endif
 
 /*

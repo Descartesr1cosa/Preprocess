@@ -690,7 +690,9 @@ void Preprocess_Data_Structure::read_grid_coordinate(Param *par, int32_t blk_n, 
                 file.read((char *)&temp, sizeof(temp));
             }
         }
-        delete[] mx, my, mz;
+        delete[] mx;
+        delete[] my;
+        delete[] mz;
     }
     else
     {
@@ -753,7 +755,9 @@ void Preprocess_Data_Structure::read_grid_coordinate(Param *par, int32_t blk_n, 
                 break;
             }
         }
-        delete[] mx, my, mz;
+        delete[] mx;
+        delete[] my;
+        delete[] mz;
     }
     int32_t ii[2], jj[2], kk[2];
     ii[0] = abs(sub[0]) - 1;
