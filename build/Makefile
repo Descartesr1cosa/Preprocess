@@ -153,6 +153,30 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MAIN.dir/build.make CMakeFiles/MAIN.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+src/MPCNS_Pre_App.o: src/MPCNS_Pre_App.cpp.o
+.PHONY : src/MPCNS_Pre_App.o
+
+# target to build an object file
+src/MPCNS_Pre_App.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MAIN.dir/build.make CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o
+.PHONY : src/MPCNS_Pre_App.cpp.o
+
+src/MPCNS_Pre_App.i: src/MPCNS_Pre_App.cpp.i
+.PHONY : src/MPCNS_Pre_App.i
+
+# target to preprocess a source file
+src/MPCNS_Pre_App.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MAIN.dir/build.make CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.i
+.PHONY : src/MPCNS_Pre_App.cpp.i
+
+src/MPCNS_Pre_App.s: src/MPCNS_Pre_App.cpp.s
+.PHONY : src/MPCNS_Pre_App.s
+
+# target to generate assembly for a file
+src/MPCNS_Pre_App.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MAIN.dir/build.make CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.s
+.PHONY : src/MPCNS_Pre_App.cpp.s
+
 src/MPCNS_Pre_Data.o: src/MPCNS_Pre_Data.cpp.o
 .PHONY : src/MPCNS_Pre_Data.o
 
@@ -357,6 +381,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... src/MPCNS_Pre_App.o"
+	@echo "... src/MPCNS_Pre_App.i"
+	@echo "... src/MPCNS_Pre_App.s"
 	@echo "... src/MPCNS_Pre_Data.o"
 	@echo "... src/MPCNS_Pre_Data.i"
 	@echo "... src/MPCNS_Pre_Data.s"

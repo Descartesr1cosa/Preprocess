@@ -83,10 +83,24 @@ CMakeFiles/MAIN.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MAIN.dir/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/xuke/Preprocess/main.cpp -o CMakeFiles/MAIN.dir/main.cpp.s
 
+CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o: CMakeFiles/MAIN.dir/flags.make
+CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_App.cpp
+CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_App.cpp
+
+CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/xuke/Preprocess/src/MPCNS_Pre_App.cpp > CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.i
+
+CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/xuke/Preprocess/src/MPCNS_Pre_App.cpp -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.s
+
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_Data.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_Data.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.i: cmake_force
@@ -100,7 +114,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_Datatrans.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_Datatrans.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.i: cmake_force
@@ -114,7 +128,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_Group.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_Group.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.i: cmake_force
@@ -128,7 +142,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_IOinfo.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_IOinfo.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.i: cmake_force
@@ -142,7 +156,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_IOinfo.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_Parameter.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_Parameter.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.i: cmake_force
@@ -156,7 +170,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_Parameter.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o: /home/xuke/Preprocess/src/MPCNS_Pre_Split.cpp
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o -MF CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o.d -o CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.o -c /home/xuke/Preprocess/src/MPCNS_Pre_Split.cpp
 
 CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.i: cmake_force
@@ -170,7 +184,7 @@ CMakeFiles/MAIN.dir/src/MPCNS_Pre_Split.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o: /home/xuke/Preprocess/src/Pre_ACANSOutput.cpp
 CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o -MF CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o.d -o CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o -c /home/xuke/Preprocess/src/Pre_ACANSOutput.cpp
 
 CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.i: cmake_force
@@ -184,7 +198,7 @@ CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.s: cmake_force
 CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o: CMakeFiles/MAIN.dir/flags.make
 CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o: /home/xuke/Preprocess/src/Pre_MPCNSOutput.cpp
 CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o: CMakeFiles/MAIN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o -MF CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o.d -o CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o -c /home/xuke/Preprocess/src/Pre_MPCNSOutput.cpp
 
 CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.i: cmake_force
@@ -198,6 +212,7 @@ CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.s: cmake_force
 # Object files for target MAIN
 MAIN_OBJECTS = \
 "CMakeFiles/MAIN.dir/main.cpp.o" \
+"CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o" \
 "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o" \
 "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o" \
 "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o" \
@@ -211,6 +226,7 @@ MAIN_OBJECTS = \
 MAIN_EXTERNAL_OBJECTS =
 
 MAIN: CMakeFiles/MAIN.dir/main.cpp.o
+MAIN: CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o
 MAIN: CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o
 MAIN: CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o
 MAIN: CMakeFiles/MAIN.dir/src/MPCNS_Pre_Group.cpp.o
@@ -221,7 +237,7 @@ MAIN: CMakeFiles/MAIN.dir/src/Pre_ACANSOutput.cpp.o
 MAIN: CMakeFiles/MAIN.dir/src/Pre_MPCNSOutput.cpp.o
 MAIN: CMakeFiles/MAIN.dir/build.make
 MAIN: CMakeFiles/MAIN.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable MAIN"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/xuke/Preprocess/build-safe-cout/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable MAIN"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/MAIN.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

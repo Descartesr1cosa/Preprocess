@@ -16,6 +16,7 @@ endif()
 
 add_executable(MAIN
     main.cpp
+    src/MPCNS_Pre_App.cpp
     src/MPCNS_Pre_Data.cpp
     src/MPCNS_Pre_Datatrans.cpp
     src/MPCNS_Pre_Group.cpp

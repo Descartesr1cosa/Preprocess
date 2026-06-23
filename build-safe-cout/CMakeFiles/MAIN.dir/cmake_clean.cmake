@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/MAIN.dir/main.cpp.o"
   "CMakeFiles/MAIN.dir/main.cpp.o.d"
+  "CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o"
+  "CMakeFiles/MAIN.dir/src/MPCNS_Pre_App.cpp.o.d"
   "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o"
   "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Data.cpp.o.d"
   "CMakeFiles/MAIN.dir/src/MPCNS_Pre_Datatrans.cpp.o"
