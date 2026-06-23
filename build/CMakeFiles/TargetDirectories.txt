@@ -1,3 +1,0 @@
-/home/xuke/Preprocess/build/CMakeFiles/MAIN.dir
-/home/xuke/Preprocess/build/CMakeFiles/edit_cache.dir
-/home/xuke/Preprocess/build/CMakeFiles/rebuild_cache.dir

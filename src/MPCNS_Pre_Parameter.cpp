@@ -1,5 +1,20 @@
 #include "MPCNS_Pre_Parameter.h"
 #include "0_CONST_DEFINE.h"
+#include <cerrno>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+namespace
+{
+void EnsureDirectory(const std::string &path)
+{
+    if (mkdir(path.c_str(), 0755) != 0 && errno != EEXIST)
+    {
+        std::cout << "#Fatal Error: Cannot create directory:\t" << path << std::endl;
+        exit(-1);
+    }
+}
+}
 
 void Param::ReadParam(int32_t _myid)
 {
@@ -436,22 +451,10 @@ void Param::Pre_Process()
     {
         // 创建所需要的文件路径
         std::cout << "---->(1)Building the OUTPUT Files...\n";
-        std::string command;
-        command = "mkdir OUTPUT";
-        std::system(command.c_str());
-        command = "mkdir OUTPUT/geometry";
-        std::system(command.c_str());
-        command = "mkdir OUTPUT/geometry_bin";
-        std::system(command.c_str());
-        command = "mkdir OUTPUT/geometry/boundary_condition";
-        std::system(command.c_str());
-        // For Windows
-        command = "mkdir OUTPUT\\geometry";
-        std::system(command.c_str());
-        command = "mkdir OUTPUT\\geometry_bin";
-        std::system(command.c_str());
-        command = "mkdir OUTPUT\\geometry\\boundary_condition";
-        std::system(command.c_str());
+        EnsureDirectory("OUTPUT");
+        EnsureDirectory("OUTPUT/geometry");
+        EnsureDirectory("OUTPUT/geometry_bin");
+        EnsureDirectory("OUTPUT/geometry/boundary_condition");
         std::cout << "\t-->OUTPUT Files have been successfully built ! ! !\n";
     }
 }

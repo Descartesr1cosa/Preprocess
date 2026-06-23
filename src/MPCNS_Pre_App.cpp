@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 
+#include "MPCNS_Pre_CubicGridGenerator.h"
 #include "MPCNS_Pre_Data.h"
 #include "MPCNS_Pre_Datatrans.h"
 #include "MPCNS_Pre_Group.h"
@@ -296,6 +297,10 @@ int PreprocessApplication::Run(int argc, char **argv)
 
     Param param;
     param.ReadParam(rank);
+
+    if (rank == 0)
+        CubicPeriodicGridGenerator::GenerateIfEnabled(param);
+    mpi.Barrier();
 
     SplitGroupBuilder(rank, param).BuildIfNeeded();
     mpi.Barrier();

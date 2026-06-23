@@ -1,0 +1,9 @@
+FVBND 1 7
+No_boundary_Conditions
+PERIOD-X
+period_X
+PERIOD-Y
+period_Y
+PERIOD-Z
+period_Z
+BOUNDARIES

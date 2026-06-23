@@ -82,6 +82,11 @@ public:
     void AddParam(std::string name_in, List<int> data_in) { List_IntParam[name_in] = data_in; };    // 更新int List类型参数
     void AddParam(std::string name_in, List<double> data_in) { List_DouParam[name_in] = data_in; }; // 更新double List类型参数
 
+    bool HasStr(std::string name_in) const { return StrParam.count(name_in) != 0; };
+    bool HasInt(std::string name_in) const { return IntParam.count(name_in) != 0; };
+    bool HasDou(std::string name_in) const { return DouParam.count(name_in) != 0; };
+    bool HasBoo(std::string name_in) const { return BooParam.count(name_in) != 0; };
+
     /**
      * @brief	索引参数，有四个函数，分别对应四种参数
      * @param name_in 通过字符串索引参数
