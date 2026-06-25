@@ -16,10 +16,10 @@
 
 void Split(Preprocess_Data_Structure *ptr, Param *par);
 
-void split_mid_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index);
-void split_1D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
-void split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
-void split_3D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
+bool split_mid_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index);
+bool split_1D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
+bool split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
+bool split_3D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t averge_grid);
 
 void output_split_info_inp(Preprocess_Data_Structure *ptr, Param *par);
 //=========================================================================================================

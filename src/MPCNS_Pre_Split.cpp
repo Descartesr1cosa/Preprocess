@@ -1,10 +1,132 @@
 #include "MPCNS_Pre_Split.h"
 #include <math.h>
 // #include "preprocess_output.h"
+
+namespace
+{
+int32_t GetPoleAzimuthDirection(Param *par)
+{
+    if (!par->HasInt("pole_azimuth_direction"))
+        return 3;
+    return par->GetInt("pole_azimuth_direction");
+}
+
+std::string GetPoleBoundaryName(Param *par)
+{
+    if (!par->HasStr("pole_boundary_name"))
+        return "Pole";
+    return par->GetStr("pole_boundary_name");
+}
+
+bool ForbidPoleAzimuthSplit(Param *par)
+{
+    if (!par->HasBoo("forbid_pole_azimuth_split"))
+        return true;
+    return par->GetBoo("forbid_pole_azimuth_split");
+}
+
+int32_t FaceNormalDirection(const coordinate_phy &face, int32_t dimension)
+{
+    int32_t normal = 0;
+    for (int32_t i = 0; i < dimension; i++)
+    {
+        if (face.sub[i] == face.sup[i])
+        {
+            if (normal != 0)
+                return 0;
+            normal = i + 1;
+        }
+    }
+    return normal;
+}
+
+bool HasPoleFaceCutByAzimuth(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index)
+{
+    if (!ForbidPoleAzimuthSplit(par))
+        return false;
+
+    const std::string pole_boundary_name = GetPoleBoundaryName(par);
+    const std::map<std::string, int32_t>::iterator it = ptr->phy_index.find(pole_boundary_name);
+    if (it == ptr->phy_index.end())
+        return false;
+
+    const int32_t pole_kind = it->second;
+    const int32_t azimuth_direction = GetPoleAzimuthDirection(par);
+    const int32_t dimension = par->GetInt("dimension");
+
+    for (int32_t iface = 0; iface < ptr->blk(split_index).bound.size(); iface++)
+    {
+        const coordinate_phy &face = ptr->blk(split_index).bound[iface];
+        if (face.phy_kind != pole_kind)
+            continue;
+
+        const int32_t normal_direction = FaceNormalDirection(face, dimension);
+        if (normal_direction == azimuth_direction)
+        {
+            std::cout << "\tWarning!\tPole boundary '" << pole_boundary_name
+                      << "' has normal direction equal to pole_azimuth_direction = "
+                      << azimuth_direction << " on block " << split_index << ".\n";
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool IsSplitDirectionForbidden(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t direction)
+{
+    return direction == GetPoleAzimuthDirection(par) && HasPoleFaceCutByAzimuth(ptr, par, split_index);
+}
+
+void ReportPoleBoundaryMapping(Preprocess_Data_Structure *ptr, Param *par)
+{
+    if (!ForbidPoleAzimuthSplit(par))
+        return;
+
+    const std::string pole_boundary_name = GetPoleBoundaryName(par);
+    const std::map<std::string, int32_t>::iterator it = ptr->phy_index.find(pole_boundary_name);
+    if (it == ptr->phy_index.end())
+    {
+        std::cout << "\tWarning!\tCannot find pole_boundary_name = " << pole_boundary_name
+                  << " in fvbnd boundary names. Pole azimuth split constraint is inactive.\n";
+        return;
+    }
+
+    std::cout << "\t\tPole boundary '" << pole_boundary_name << "' corresponds to physical kind "
+              << it->second << ".\n";
+}
+
+bool SplitBlockIfAllowed(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t direction, int32_t location)
+{
+    if (IsSplitDirectionForbidden(ptr, par, split_index, direction))
+        return false;
+    ptr->split_block(par, split_index, direction, location);
+    return true;
+}
+
+int32_t LargestAllowedDirection(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index)
+{
+    int32_t direction = 0;
+    int32_t ijkmax = 0;
+    for (int32_t i = 0; i < 3; i++)
+    {
+        if (IsSplitDirectionForbidden(ptr, par, split_index, i + 1))
+            continue;
+        if (ptr->blk(split_index).ijkmax[i] > ijkmax)
+        {
+            ijkmax = ptr->blk(split_index).ijkmax[i];
+            direction = i + 1;
+        }
+    }
+    return direction;
+}
+}
+
 void Split(Preprocess_Data_Structure *ptr, Param *par)
 {
     if (!par->GetBoo("ifsplit"))
         return;
+    ReportPoleBoundaryMapping(ptr, par);
     //=============================================================================================
     // 开始自动剖分
     //---------------------------------------------------------------------------------------------
@@ -38,25 +160,32 @@ void Split(Preprocess_Data_Structure *ptr, Param *par)
         if (stop_the_loop)
             break;
         //---------------------------------------------------------------------------
+        bool split_success = false;
         if (this_block_number < 2 * max_grid)
         {
             // 1~2倍平均网格点数则《尝试》采用最大维中点二分
-            split_mid_location(ptr, par, split_index);
+            split_success = split_mid_location(ptr, par, split_index);
         }
         else if (this_block_number < 4 * max_grid)
         {
             // 2~4倍平均网格点数则《尝试》采用一维剖分，返回剖分方向和位置
-            split_1D_location(ptr, par, split_index, max_grid);
+            split_success = split_1D_location(ptr, par, split_index, max_grid);
         }
         else if (this_block_number < 8 * max_grid || dimension == 2)
         {
             // 4~8倍平均网格点数则《尝试》采用二维剖分，子进程中直接修改剖分方向与位置
-            split_2D_location(ptr, par, split_index, max_grid);
+            split_success = split_2D_location(ptr, par, split_index, max_grid);
         }
         else if (dimension == 3)
         {
             // 8倍以上的平均网格点数切维数为3则《尝试》采用三维剖分，子进程中直接修改剖分方向与位置
-            split_3D_location(ptr, par, split_index, max_grid);
+            split_success = split_3D_location(ptr, par, split_index, max_grid);
+        }
+        if (!split_success)
+        {
+            std::cout << "\tWarning!\tNo legal split direction for block " << split_index
+                      << " under Pole azimuth split constraint. Stop splitting.\n";
+            break;
         }
         std::cout << "\t\t->We split the grid " << split_index << "\tNow the number is " << ptr->blk.Getsize1() << std::endl;
         ptr->check_read_info(par);
@@ -67,50 +196,49 @@ void Split(Preprocess_Data_Structure *ptr, Param *par)
     output_split_info_inp(ptr, par);
 }
 
-void split_mid_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index)
+bool split_mid_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index)
 {
-    int32_t ijkmax = 0, direction = 0, location = 0;
-    for (int32_t i = 0; i < 3; i++)
-    {
-        if (ptr->blk(split_index).ijkmax[i] > ijkmax)
-        {
-            ijkmax = ptr->blk(split_index).ijkmax[i];
-            direction = i;
-        }
-    }
-
+    int32_t direction = LargestAllowedDirection(ptr, par, split_index);
+    if (direction == 0)
+        return false;
+    int32_t location = 0;
+    direction--;
     location = (int)(ptr->blk(split_index).ijkmax[direction] / 2);
     direction++;
-    ptr->split_block(par, split_index, direction, location);
+    return SplitBlockIfAllowed(ptr, par, split_index, direction, location);
 }
 
-void split_1D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
+bool split_1D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
 {
-    int32_t ijkmax = 0, direction = 0, location = 0;
-    for (int32_t i = 0; i < 3; i++)
-    {
-        if (ptr->blk(split_index).ijkmax[i] > ijkmax)
-        {
-            ijkmax = ptr->blk(split_index).ijkmax[i];
-            direction = i;
-        }
-    }
-
+    int32_t direction = LargestAllowedDirection(ptr, par, split_index);
+    if (direction == 0)
+        return false;
+    int32_t location = 0;
+    direction--;
     location = (int)(ptr->blk(split_index).ijkmax[direction] * average_grid / ptr->blk(split_index).ijkmax[0] / ptr->blk(split_index).ijkmax[1] / ptr->blk(split_index).ijkmax[2]);
     direction++;
-    ptr->split_block(par, split_index, direction, location);
+    return SplitBlockIfAllowed(ptr, par, split_index, direction, location);
 }
 
-void split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
+bool split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
 {
     int32_t ijkmax = 1e7, direction = 0, location = 0;
     int32_t split_limit = par->GetInt("split_limit");
-    for (int32_t i = 0; i < 3; i++)
+    if (HasPoleFaceCutByAzimuth(ptr, par, split_index))
     {
-        if (ptr->blk(split_index).ijkmax[i] < ijkmax)
+        direction = GetPoleAzimuthDirection(par) - 1;
+        if (direction < 0 || direction >= 3)
+            return split_1D_location(ptr, par, split_index, average_grid);
+    }
+    else
+    {
+        for (int32_t i = 0; i < 3; i++)
         {
-            ijkmax = ptr->blk(split_index).ijkmax[i];
-            direction = i;
+            if (ptr->blk(split_index).ijkmax[i] < ijkmax)
+            {
+                ijkmax = ptr->blk(split_index).ijkmax[i];
+                direction = i;
+            }
         }
     }
     location = (int)sqrt(average_grid / ptr->blk(split_index).ijkmax[direction]);
@@ -118,8 +246,7 @@ void split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split
     if (location < split_limit)
     {
         direction++;
-        split_1D_location(ptr, par, split_index, average_grid);
-        return;
+        return split_1D_location(ptr, par, split_index, average_grid);
     }
 
     for (int32_t i = 0; i < 3; i++)
@@ -129,8 +256,7 @@ void split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split
         if (abs(ptr->blk(split_index).ijkmax[i] - location) < split_limit || location > ptr->blk(split_index).ijkmax[i])
         {
             direction++;
-            split_1D_location(ptr, par, split_index, average_grid);
-            return;
+            return split_1D_location(ptr, par, split_index, average_grid);
         }
     }
 
@@ -139,57 +265,76 @@ void split_2D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split
     direction++;
     if (direction == 1)
     {
-        ptr->split_block(par, split_index, 2, location);
-        ptr->split_block(par, old_number_max, 3, location);
-        ptr->split_block(par, split_index, 3, location);
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 2, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, old_number_max, 3, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 3, location))
+            return false;
     }
     else if (direction == 2)
     {
-        ptr->split_block(par, split_index, 1, location);
-        ptr->split_block(par, old_number_max, 3, location);
-        ptr->split_block(par, split_index, 3, location);
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 1, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, old_number_max, 3, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 3, location))
+            return false;
     }
     else if (direction == 3)
     {
-        ptr->split_block(par, split_index, 1, location);
-        ptr->split_block(par, old_number_max, 2, location);
-        ptr->split_block(par, split_index, 2, location);
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 1, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, old_number_max, 2, location))
+            return false;
+        if (!SplitBlockIfAllowed(ptr, par, split_index, 2, location))
+            return false;
     }
+    return true;
 }
 
-void split_3D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
+bool split_3D_location(Preprocess_Data_Structure *ptr, Param *par, int32_t split_index, int32_t average_grid)
 {
-    int32_t direction = 0, location = 0;
+    int32_t location = 0;
     int32_t split_limit = par->GetInt("split_limit");
+
+    if (HasPoleFaceCutByAzimuth(ptr, par, split_index))
+        return split_2D_location(ptr, par, split_index, average_grid);
 
     location = (int)pow(average_grid, 1.0 / 3.0);
 
     if (location < split_limit)
     {
-        split_2D_location(ptr, par, split_index, average_grid);
-        return;
+        return split_2D_location(ptr, par, split_index, average_grid);
     }
 
     for (int32_t i = 0; i < 3; i++)
     {
         if (abs(ptr->blk(split_index).ijkmax[i] - location) < split_limit || location > ptr->blk(split_index).ijkmax[i])
         {
-            split_2D_location(ptr, par, split_index, average_grid);
-            return;
+            return split_2D_location(ptr, par, split_index, average_grid);
         }
     }
 
     // 一剖为8
     int32_t old_number_max = ptr->blk.Getsize1();
-    ptr->split_block(par, split_index, 1, location);
-    ptr->split_block(par, split_index, 2, location);
-    ptr->split_block(par, split_index, 3, location);
+    if (!SplitBlockIfAllowed(ptr, par, split_index, 1, location))
+        return false;
+    if (!SplitBlockIfAllowed(ptr, par, split_index, 2, location))
+        return false;
+    if (!SplitBlockIfAllowed(ptr, par, split_index, 3, location))
+        return false;
 
-    ptr->split_block(par, old_number_max, 2, location);
-    ptr->split_block(par, old_number_max, 3, location);
+    if (!SplitBlockIfAllowed(ptr, par, old_number_max, 2, location))
+        return false;
+    if (!SplitBlockIfAllowed(ptr, par, old_number_max, 3, location))
+        return false;
 
-    ptr->split_block(par, old_number_max + 1, 3, location);
-    ptr->split_block(par, old_number_max + 3, 3, location);
+    if (!SplitBlockIfAllowed(ptr, par, old_number_max + 1, 3, location))
+        return false;
+    if (!SplitBlockIfAllowed(ptr, par, old_number_max + 3, 3, location))
+        return false;
+    return true;
 }
 
 void output_split_info_inp(Preprocess_Data_Structure *ptr, Param *par)

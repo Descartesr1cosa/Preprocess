@@ -11,6 +11,9 @@ string	ffilename	phipsi.fvbnd		//ffilename, fvbnd文件名
 //=================================================================================================
 bool	ifsplit		0			//ifsplit,是否进行二次剖分
 int	split_limit	40			//剖分的最小网格约束，默认为10，最小块的两(三)(dim=2or3)个方向尺度不得小于10层
+bool forbid_pole_azimuth_split 1       //避免切开Pole边界面的周向
+string pole_boundary_name Pole         //Pole边界名，按fvbnd名称查找，不固定使用边界编号
+int pole_azimuth_direction 3           //Pole周向方向，1/2/3对应i/j/k；Pole面法向不应为此方向
 
 //---------------------------------------------------------------------------------------
 double	split_scale	0.8			//split_scale剖分所容忍的不均衡度

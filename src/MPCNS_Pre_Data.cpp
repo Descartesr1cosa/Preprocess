@@ -11,6 +11,40 @@
 
 #include "MPCNS_Pre_Data.h"
 #include <math.h>
+
+namespace
+{
+const int32_t CANONICAL_POLE_KIND = 7;
+
+bool IsPoleAliasKind(int32_t phy_kind)
+{
+    return phy_kind == 72 || phy_kind == 73;
+}
+
+void NormalizeInpPoleBoundaryKind(Preprocess_Data_Structure *ptr)
+{
+    int32_t changed_face_number = 0;
+    for (int32_t iblock = 0; iblock < ptr->blk.Getsize1(); iblock++)
+    {
+        for (int32_t iface = 0; iface < ptr->blk(iblock).bound.size(); iface++)
+        {
+            coordinate_phy &boundary = ptr->blk(iblock).bound[iface];
+            if (IsPoleAliasKind(boundary.phy_kind))
+            {
+                boundary.phy_kind = CANONICAL_POLE_KIND;
+                changed_face_number++;
+            }
+        }
+    }
+
+    if (changed_face_number > 0)
+    {
+        std::cout << "\t-->Normalize " << changed_face_number
+                  << " Pole boundary faces in inp from kind 72/73 to "
+                  << CANONICAL_POLE_KIND << ".\n";
+    }
+}
+}
 //=================================================================================================
 //---------------------------------------读入inp文件信息---------------------------------------------
 
@@ -159,6 +193,7 @@ void Preprocess_Data_Structure::read_inp(Param *par)
     file.close();
 
     std::cout << "\t-->Finish reading the fvbnd file\n";
+    NormalizeInpPoleBoundaryKind(this);
     //=============================================================================================
     std::string str;
     for (int32_t i = 0; i < phy_name.size(); i++)
