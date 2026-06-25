@@ -339,6 +339,21 @@ void Param::ReadLISTModule(std::string &filename, std::fstream &file, std::strin
         AddParam(List_name, temp);
         return;
     }
+    else if (keywordmap[keyword] == STRING)
+    {
+        List<std::string> temp(stoi(value));
+        getline(file, line); // 本行为string列表元素
+
+        for (int i = 0; i < temp.num; i++)
+        {
+            line = FindNextWord(line, value, sep);
+            name = value;
+            temp.data[name] = value;
+        }
+        getline(file, line); // 本行读入List
+        AddParam(List_name, temp);
+        return;
+    }
 }
 
 void Param::ReadFile(std::string &filename, std::map<std::string, int> keywordmap, std::string sep)

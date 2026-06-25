@@ -69,6 +69,8 @@ private:
     std::map<std::string, List<int>> List_IntParam;
     // 存储double List类型参数的map
     std::map<std::string, List<double>> List_DouParam;
+    // 存储string List类型参数的map
+    std::map<std::string, List<std::string>> List_StrParam;
 
 public:
     /**
@@ -81,11 +83,13 @@ public:
     void AddParam(std::string name_in, bool data_in) { BooParam[name_in] = data_in; };              // 更新bool类型参数
     void AddParam(std::string name_in, List<int> data_in) { List_IntParam[name_in] = data_in; };    // 更新int List类型参数
     void AddParam(std::string name_in, List<double> data_in) { List_DouParam[name_in] = data_in; }; // 更新double List类型参数
+    void AddParam(std::string name_in, List<std::string> data_in) { List_StrParam[name_in] = data_in; }; // 更新string List类型参数
 
     bool HasStr(std::string name_in) const { return StrParam.count(name_in) != 0; };
     bool HasInt(std::string name_in) const { return IntParam.count(name_in) != 0; };
     bool HasDou(std::string name_in) const { return DouParam.count(name_in) != 0; };
     bool HasBoo(std::string name_in) const { return BooParam.count(name_in) != 0; };
+    bool HasStr_List(std::string name_in) const { return List_StrParam.count(name_in) != 0; };
 
     /**
      * @brief	索引参数，有四个函数，分别对应四种参数
@@ -146,6 +150,15 @@ public:
         }
         return List_DouParam[name_in];
     }; // 索引double List类型参数
+    List<std::string> GetStr_List(std::string name_in)
+    {
+        if (List_StrParam.count(name_in) == 0)
+        {
+            std::cout << "#Fatal Error: No such List(String) as:\t" << name_in << std::endl;
+            exit(-1);
+        }
+        return List_StrParam[name_in];
+    }; // 索引string List类型参数
 
     /**
      * @brief	读输入文件

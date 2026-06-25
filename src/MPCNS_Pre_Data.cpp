@@ -10,6 +10,8 @@
 *****************************************************************************/
 
 #include "MPCNS_Pre_Data.h"
+#include <algorithm>
+#include <cctype>
 #include <math.h>
 
 namespace
@@ -43,6 +45,76 @@ void NormalizeInpPoleBoundaryKind(Preprocess_Data_Structure *ptr)
                   << " Pole boundary faces in inp from kind 72/73 to "
                   << CANONICAL_POLE_KIND << ".\n";
     }
+}
+
+std::string ToLower(std::string str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
+    return str;
+}
+
+std::vector<std::string> SplitKeywords(const std::string &keyword_group)
+{
+    std::vector<std::string> keywords;
+    std::string keyword;
+    for (int32_t i = 0; i < keyword_group.size(); i++)
+    {
+        if (keyword_group[i] == '|')
+        {
+            if (!keyword.empty())
+                keywords.push_back(keyword);
+            keyword.clear();
+        }
+        else
+        {
+            keyword.push_back(keyword_group[i]);
+        }
+    }
+    if (!keyword.empty())
+        keywords.push_back(keyword);
+    return keywords;
+}
+
+std::string NormalizeBlockName(const std::string &raw_block_name, Param *par)
+{
+    if (!par->HasBoo("if_multiphy_facecouple") || !par->GetBoo("if_multiphy_facecouple"))
+        return raw_block_name;
+
+    std::string matched_name;
+    const std::string raw_lower = ToLower(raw_block_name);
+    if (par->HasStr_List("canonical_block_name_keywords"))
+    {
+        List<std::string> keyword_groups = par->GetStr_List("canonical_block_name_keywords");
+        for (std::map<std::string, std::string>::iterator iter = keyword_groups.data.begin(); iter != keyword_groups.data.end(); iter++)
+        {
+            const std::string canonical_name = iter->first;
+            const std::vector<std::string> keywords = SplitKeywords(iter->second);
+            bool group_matched = false;
+            for (int32_t i = 0; i < keywords.size(); i++)
+            {
+                if (raw_lower.find(ToLower(keywords[i])) != std::string::npos)
+                {
+                    group_matched = true;
+                    break;
+                }
+            }
+            if (!group_matched)
+                continue;
+
+            if (!matched_name.empty() && matched_name != canonical_name)
+            {
+                std::cout << "#Fatal Error: Block name '" << raw_block_name
+                          << "' matches more than one canonical block-name keyword group: "
+                          << matched_name << " and " << canonical_name << std::endl;
+                exit(-1);
+            }
+            matched_name = canonical_name;
+        }
+    }
+
+    if (matched_name.empty())
+        return "Fluid";
+    return matched_name;
 }
 }
 //=================================================================================================
@@ -91,6 +163,7 @@ void Preprocess_Data_Structure::read_inp(Param *par)
         }
         temp.oring_num = iblock;
         file >> temp.blk_name;
+        temp.blk_name = NormalizeBlockName(temp.blk_name, par);
         // 完成了coordinate_blk读入
         for (int32_t i = 0; i < 3; i++)
             blk(iblock).ijkmax[i] = temp.sup[i];
