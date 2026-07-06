@@ -559,15 +559,26 @@ std::string PatchRange2D(const Patch &patch, int face)
     return s.str();
 }
 
-bool PatchCoversCell(const Patch &patch, int face, int ulo, int uhi, int vlo, int vhi)
+void PatchCellInterval2D(const Patch &patch, int face, int &ulo, int &uhi, int &vlo, int &vhi)
 {
     int u_axis = 0;
     int v_axis = 1;
     TangentialAxes(face, u_axis, v_axis);
-    const int pu0 = std::min(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1]));
-    const int pu1 = std::max(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1])) + 1;
-    const int pv0 = std::min(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1]));
-    const int pv1 = std::max(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1])) + 1;
+    ulo = std::min(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1]));
+    uhi = std::max(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1]));
+    vlo = std::min(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1]));
+    vhi = std::max(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1]));
+}
+
+bool PatchCoversCell(const Patch &patch, int face, int ulo, int uhi, int vlo, int vhi)
+{
+    int pu0 = 0;
+    int pu1 = 0;
+    int pv0 = 0;
+    int pv1 = 0;
+    PatchCellInterval2D(patch, face, pu0, pu1, pv0, pv1);
+    if (pu0 >= pu1 || pv0 >= pv1)
+        return false;
     return pu0 <= ulo && uhi <= pu1 && pv0 <= vlo && vhi <= pv1;
 }
 
@@ -591,16 +602,27 @@ void AnalyzeAndWriteFace(ReportData &data, FaceReport &face_report)
     std::set<int> cut_u;
     std::set<int> cut_v;
     cut_u.insert(1);
-    cut_u.insert(umax + 1);
+    cut_u.insert(umax);
     cut_v.insert(1);
-    cut_v.insert(vmax + 1);
+    cut_v.insert(vmax);
     for (std::size_t i = 0; i < face_report.patch_ids.size(); ++i)
     {
         const Patch &patch = data.patches[face_report.patch_ids[i]];
-        cut_u.insert(std::min(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1])));
-        cut_u.insert(std::max(std::abs(patch.source_box[u_axis][0]), std::abs(patch.source_box[u_axis][1])) + 1);
-        cut_v.insert(std::min(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1])));
-        cut_v.insert(std::max(std::abs(patch.source_box[v_axis][0]), std::abs(patch.source_box[v_axis][1])) + 1);
+        int ulo = 0;
+        int uhi = 0;
+        int vlo = 0;
+        int vhi = 0;
+        PatchCellInterval2D(patch, face, ulo, uhi, vlo, vhi);
+        if (ulo < uhi)
+        {
+            cut_u.insert(ulo);
+            cut_u.insert(uhi);
+        }
+        if (vlo < vhi)
+        {
+            cut_v.insert(vlo);
+            cut_v.insert(vhi);
+        }
     }
     face_report.cuts_u.assign(cut_u.begin(), cut_u.end());
     face_report.cuts_v.assign(cut_v.begin(), cut_v.end());
@@ -632,6 +654,7 @@ void AnalyzeAndWriteFace(ReportData &data, FaceReport &face_report)
     }
 
     file << "\n## Coverage Diagnostics\n\n";
+    file << "Coverage is checked on face cells, not on face nodes. A patch node range `[lo:hi]` covers the half-open cell interval `[lo,hi)`, so shared nodes or shared edges are not reported as overlaps.\n\n";
     file << "- u cuts: ";
     for (std::size_t i = 0; i < face_report.cuts_u.size(); ++i)
         file << (i ? ", " : "") << face_report.cuts_u[i];
