@@ -21,6 +21,7 @@ add_executable(MAIN
     src/MPCNS_Pre_Data.cpp
     src/MPCNS_Pre_Datatrans.cpp
     src/MPCNS_Pre_Group.cpp
+    src/MPCNS_Pre_InputRefinement.cpp
     src/MPCNS_Pre_IOinfo.cpp
     src/MPCNS_Pre_Parameter.cpp
     src/MPCNS_Pre_Split.cpp

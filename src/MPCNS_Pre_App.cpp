@@ -8,6 +8,7 @@
 #include "MPCNS_Pre_Data.h"
 #include "MPCNS_Pre_Datatrans.h"
 #include "MPCNS_Pre_Group.h"
+#include "MPCNS_Pre_InputRefinement.h"
 #include "MPCNS_Pre_IOinfo.h"
 #include "MPCNS_Pre_Parameter.h"
 #include "MPCNS_Pre_Split.h"
@@ -300,6 +301,9 @@ int PreprocessApplication::Run(int argc, char **argv)
 
     if (rank == 0)
         CubicPeriodicGridGenerator::GenerateIfEnabled(param);
+    mpi.Barrier();
+
+    InputRefinement::RefineIfEnabled(param);
     mpi.Barrier();
 
     SplitGroupBuilder(rank, param).BuildIfNeeded();
