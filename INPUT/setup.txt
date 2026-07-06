@@ -1,6 +1,6 @@
 //=================================================================================================
-int	dimension	2			//dimension, 网格维数
-int	proc_num	1			//proc_num, 计算进程数
+int	dimension	3			//dimension, 网格维数
+int	proc_num	10			//proc_num, 计算进程数
 string	gfilename	phipsi.grd			//gfilename, grd文件名
 string	bfilename	phipsi.inp			//bfilename, inp文件名
 string	ffilename	phipsi.fvbnd		//ffilename, fvbnd文件名
@@ -9,14 +9,14 @@ string	ffilename	phipsi.fvbnd		//ffilename, fvbnd文件名
 
 
 //=================================================================================================
-bool	ifsplit		0			//ifsplit,是否进行二次剖分
-int	split_limit	40			//剖分的最小网格约束，默认为10，最小块的两(三)(dim=2or3)个方向尺度不得小于10层
+bool	ifsplit		1			//ifsplit,是否进行二次剖分
+int	split_limit	10			//剖分的最小网格约束，默认为10，最小块的两(三)(dim=2or3)个方向尺度不得小于10层
 bool forbid_pole_azimuth_split 1       //避免切开Pole边界面的周向
 string pole_boundary_name Pole         //Pole边界名，按fvbnd名称查找，不固定使用边界编号
 int pole_azimuth_direction 3           //Pole周向方向，1/2/3对应i/j/k；Pole面法向不应为此方向
 
 //---------------------------------------------------------------------------------------
-double	split_scale	0.8			//split_scale剖分所容忍的不均衡度
+double	split_scale	0.2			//split_scale剖分所容忍的不均衡度
 //						//e.g. split_scale=0.2表示按照平均1.2网格量进行剖分，默认为0.2
 //---------------------------------------------------------------------------------------
 //=================================================================================================
@@ -35,16 +35,17 @@ string partition_method morton        // greedy / morton / rcb / metis
 //---------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------
-int	grd_readtype		0		//读取文件的类型
+int	grd_readtype		2		//读取文件的类型
 //						//>0普通文本文档ASCII的plot3d
 //						//>1二进制类型unformmated的plot3d
 //						//>2二进制类型binary形式的plot3D
-int refine_level 0      // >0 时先生成 INPUT/refine_level_L，加密倍率 R=2^L；加密后默认按二进制 grid 读取
+int refine_level 2      // >0 时先生成 INPUT/refine_level_L，加密倍率 R=2^L；加密后默认按二进制 grid 读取
 bool topology_report_ascii_layout 1 // TopologyReport face 页面是否输出二维 logical ASCII layout
+bool if_dec_orientation_test 0 // DEC orientation 自动测试 pass；仅测试用，split 后 group 前重排 final block 方向
 //---------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------
-int	grd_writetype		1		//输出网格文件的类型，MPCNS的1，2相同均为二进制(增加了blockname,其他软件不能直接打开)
+int	grd_writetype		2		//输出网格文件的类型，MPCNS的1，2相同均为二进制(增加了blockname,其他软件不能直接打开)
 //						//>0普通文本文档ASCII的plot3d
 //						//>1二进制类型unformmated的plot3d
 //						//>2二进制类型binary形式的plot3D
@@ -57,7 +58,7 @@ int	preprocess_method	1		//输出网格格式
 //---------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------
-bool	if_multiphy_facecouple	0		//是否规范化并输出多物理场块名【仅用于MPCNS，在ACANS无效】
+bool	if_multiphy_facecouple	1		//是否规范化并输出多物理场块名【仅用于MPCNS，在ACANS无效】
 //						//>0:输出的物理块名称无论输入网格、inp如何，一律输出“Fluid”
 //						//>1:读入inp时将网格块名称规范化，未识别为Fluid，命中关键词组则改为标准名称
 //						//关键词组

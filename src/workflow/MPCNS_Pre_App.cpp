@@ -7,6 +7,7 @@
 #include "workflow/MPCNS_Pre_CubicGridGenerator.h"
 #include "core/MPCNS_Pre_Data.h"
 #include "partition/MPCNS_Pre_Datatrans.h"
+#include "partition/MPCNS_Pre_DecOrientationTest.h"
 #include "partition/MPCNS_Pre_Group.h"
 #include "workflow/MPCNS_Pre_InputRefinement.h"
 #include "io/MPCNS_Pre_IOinfo.h"
@@ -84,6 +85,8 @@ public:
         std::cout << "---->(3) Splitting the large grid blocks...\n";
         Split(data.get(), &param_);
         std::cout << "\t-->The blocks have been split ! ! !\n";
+
+        DecOrientationTest::ApplyIfEnabled(data.get(), &param_);
 
         std::cout << "---->(4) Settling down the grid blocks...\n";
         Preprocess_Group group(data.get(), &param_);
