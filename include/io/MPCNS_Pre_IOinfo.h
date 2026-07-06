@@ -11,8 +11,8 @@
 
 #pragma once
 #include <fstream>
-#include "MPCNS_Pre_Data.h"
-#include "MPCNS_Pre_Group.h"
+#include "core/MPCNS_Pre_Data.h"
+#include "partition/MPCNS_Pre_Group.h"
 
 /**
  *  @brief      通过将剖分以及分配的信息输出到二进制文件，从而实现可以根据剖分信息直接并行输出网格

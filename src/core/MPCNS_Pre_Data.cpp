@@ -9,7 +9,7 @@
                 1、修改了621~623行x,y,z Setsize()的第三个参数应为mz而不是my, 713~715同
 *****************************************************************************/
 
-#include "MPCNS_Pre_Data.h"
+#include "core/MPCNS_Pre_Data.h"
 #include <algorithm>
 #include <cctype>
 #include <math.h>

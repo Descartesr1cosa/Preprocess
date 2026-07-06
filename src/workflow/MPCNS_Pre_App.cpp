@@ -1,20 +1,20 @@
-#include "MPCNS_Pre_App.h"
+#include "workflow/MPCNS_Pre_App.h"
 
 #include <cmath>
 #include <iostream>
 #include <memory>
 
-#include "MPCNS_Pre_CubicGridGenerator.h"
-#include "MPCNS_Pre_Data.h"
-#include "MPCNS_Pre_Datatrans.h"
-#include "MPCNS_Pre_Group.h"
-#include "MPCNS_Pre_InputRefinement.h"
-#include "MPCNS_Pre_IOinfo.h"
-#include "MPCNS_Pre_Parameter.h"
-#include "MPCNS_Pre_Split.h"
-#include "MPCNS_Pre_TopologyReport.h"
-#include "Pre_ACANSOutput.h"
-#include "Pre_MPCNSOutput.h"
+#include "workflow/MPCNS_Pre_CubicGridGenerator.h"
+#include "core/MPCNS_Pre_Data.h"
+#include "partition/MPCNS_Pre_Datatrans.h"
+#include "partition/MPCNS_Pre_Group.h"
+#include "workflow/MPCNS_Pre_InputRefinement.h"
+#include "io/MPCNS_Pre_IOinfo.h"
+#include "core/MPCNS_Pre_Parameter.h"
+#include "partition/MPCNS_Pre_Split.h"
+#include "report/MPCNS_Pre_TopologyReport.h"
+#include "io/Pre_ACANSOutput.h"
+#include "io/Pre_MPCNSOutput.h"
 
 #if MPCNS_Para_COUT == 1
 std::mutex g_Cs;

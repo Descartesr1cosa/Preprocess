@@ -1,4 +1,4 @@
-#include "MPCNS_Pre_Datatrans.h"
+#include "partition/MPCNS_Pre_Datatrans.h"
 
 //=================================================================================================
 // MPCNS_IF_MPI=1才会生效

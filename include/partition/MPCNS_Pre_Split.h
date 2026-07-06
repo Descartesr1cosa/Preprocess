@@ -12,7 +12,7 @@
                 1、修改了文件名称，与具体问题有关的应用功能头文件名用采用全部小写的方式
 *****************************************************************************/
 #pragma once
-#include "MPCNS_Pre_Data.h"
+#include "core/MPCNS_Pre_Data.h"
 
 void Split(Preprocess_Data_Structure *ptr, Param *par);
 

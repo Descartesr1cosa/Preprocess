@@ -10,8 +10,8 @@
 *****************************************************************************/
 #pragma once
 #include <fstream>
-#include "MPCNS_Pre_Data.h"
-#include "MPCNS_Pre_Group.h"
+#include "core/MPCNS_Pre_Data.h"
+#include "partition/MPCNS_Pre_Group.h"
 
 class OUTPUT_ACANS
 {

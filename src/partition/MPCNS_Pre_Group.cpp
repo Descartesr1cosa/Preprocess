@@ -1,5 +1,5 @@
-#include "MPCNS_Pre_Group.h"
-#include "0_CONST_DEFINE.h"
+#include "partition/MPCNS_Pre_Group.h"
+#include "core/0_CONST_DEFINE.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>

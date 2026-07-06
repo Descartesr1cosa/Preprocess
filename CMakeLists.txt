@@ -9,25 +9,25 @@ option(MPCNS_ENABLE_SAFE_COUT "Use a mutex for parallel cout" OFF)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json for VSCode/clangd" FORCE)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/core CORE_SOURCES)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/workflow WORKFLOW_SOURCES)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/partition PARTITION_SOURCES)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/io IO_SOURCES)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/report REPORT_SOURCES)
+
 add_executable(MAIN
     main.cpp
-    src/MPCNS_Pre_App.cpp
-    src/MPCNS_Pre_CubicGridGenerator.cpp
-    src/MPCNS_Pre_Data.cpp
-    src/MPCNS_Pre_Datatrans.cpp
-    src/MPCNS_Pre_Group.cpp
-    src/MPCNS_Pre_InputRefinement.cpp
-    src/MPCNS_Pre_IOinfo.cpp
-    src/MPCNS_Pre_Parameter.cpp
-    src/MPCNS_Pre_Split.cpp
-    src/MPCNS_Pre_TopologyReport.cpp
-    src/Pre_ACANSOutput.cpp
-    src/Pre_MPCNSOutput.cpp
+    ${CORE_SOURCES}
+    ${WORKFLOW_SOURCES}
+    ${PARTITION_SOURCES}
+    ${IO_SOURCES}
+    ${REPORT_SOURCES}
 )
 
 target_include_directories(MAIN PRIVATE

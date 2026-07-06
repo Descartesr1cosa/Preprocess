@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MPCNS_Pre_Parameter.h"
+#include "core/MPCNS_Pre_Parameter.h"
 
 class CubicPeriodicGridGenerator
 {

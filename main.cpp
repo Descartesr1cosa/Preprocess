@@ -1,4 +1,4 @@
-#include "MPCNS_Pre_App.h"
+#include "workflow/MPCNS_Pre_App.h"
 
 int main(int argc, char **argv)
 {

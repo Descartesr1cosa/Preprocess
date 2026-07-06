@@ -1,4 +1,4 @@
-#include "MPCNS_Pre_CubicGridGenerator.h"
+#include "workflow/MPCNS_Pre_CubicGridGenerator.h"
 
 #include <cerrno>
 #include <cstdlib>

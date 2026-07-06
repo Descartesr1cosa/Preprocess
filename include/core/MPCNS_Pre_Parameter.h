@@ -11,7 +11,7 @@
 #pragma once
 #include <map>
 #include <fstream>
-#include "0_ARRAY_DEFINE.h"
+#include "core/0_ARRAY_DEFINE.h"
 
 /**
  * @brief			存储以LIST方式读入的计算参数

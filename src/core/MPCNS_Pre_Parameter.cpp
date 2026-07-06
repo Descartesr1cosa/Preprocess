@@ -1,5 +1,5 @@
-#include "MPCNS_Pre_Parameter.h"
-#include "0_CONST_DEFINE.h"
+#include "core/MPCNS_Pre_Parameter.h"
+#include "core/0_CONST_DEFINE.h"
 #include <cerrno>
 #include <sys/stat.h>
 #include <sys/types.h>

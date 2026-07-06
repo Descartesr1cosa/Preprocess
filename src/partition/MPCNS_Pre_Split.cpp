@@ -1,4 +1,4 @@
-#include "MPCNS_Pre_Split.h"
+#include "partition/MPCNS_Pre_Split.h"
 #include <math.h>
 // #include "preprocess_output.h"
 

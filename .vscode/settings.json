@@ -58,5 +58,9 @@
         "-DMPCNS_ENABLE_METIS=OFF",
         "-DMPCNS_ENABLE_MPI=OFF",
         "-DMPCNS_ENABLE_SAFE_COUT=OFF"
+    ],
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build"
     ]
 }

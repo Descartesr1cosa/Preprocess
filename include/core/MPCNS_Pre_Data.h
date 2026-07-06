@@ -12,7 +12,7 @@
                 1、修改了文件名称，基本功能的与具体问题有关的头文件名用1_+首字母全部大写的方式
 *****************************************************************************/
 #pragma once
-#include "MPCNS_Pre_Parameter.h"
+#include "core/MPCNS_Pre_Parameter.h"
 
 // Remark 除了ijk的坐标，Tranform的值是以1开始的，其他的数组、数值均从0开始
 

@@ -1,7 +1,7 @@
-#include "Pre_MPCNSOutput.h"
+#include "io/Pre_MPCNSOutput.h"
 #include <iostream>
 #include <iomanip>
-#include "MPCNS_Pre_Datatrans.h"
+#include "partition/MPCNS_Pre_Datatrans.h"
 
 void OUTPUT_MPCNS::output_boundary_file(int32_t my_id)
 {
