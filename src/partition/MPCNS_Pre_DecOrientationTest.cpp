@@ -148,7 +148,7 @@ int MapSignedIndex(int old_q, int old_size, int signed_axis)
     const int old_sign = old_q < 0 ? -1 : 1;
     if (signed_axis > 0)
         return old_sign * old_abs;
-    return -old_sign * (old_size + 1 - old_abs);
+    return old_sign * (old_size + 1 - old_abs);
 }
 
 void MapBoxPreserveDirection(const int old_sub[3], const int old_sup[3], const int old_size[3],
@@ -265,6 +265,55 @@ std::vector<std::string> MissingKeyNames(const std::set<std::string> &covered, i
         if (covered.count(all_keys[i]) == 0)
             missing.push_back(all_keys[i]);
     return missing;
+}
+
+std::string BoxText(const int sub[3], const int sup[3])
+{
+    std::ostringstream s;
+    s << "[" << sub[0] << ":" << sup[0] << ", "
+      << sub[1] << ":" << sup[1] << ", "
+      << sub[2] << ":" << sup[2] << "]";
+    return s.str();
+}
+
+int NegativeAxisCount(const int sub[3], const int sup[3])
+{
+    int count = 0;
+    for (int d = 0; d < 3; ++d)
+        if (sub[d] < 0 || sup[d] < 0)
+            count++;
+    return count;
+}
+
+void ValidateInnerBoxFormat(Preprocess_Data_Structure *data, int dimension)
+{
+    if (dimension == 2)
+        return;
+
+    const int nblock = data->blk.Getsize1();
+    for (int iblock = 0; iblock < nblock; ++iblock)
+        for (int jblock = 0; jblock < nblock; ++jblock)
+        {
+            Inner &inner = data->inp(iblock, jblock);
+            for (std::size_t iface = 0; iface < inner.inner.size(); ++iface)
+            {
+                coordinate_inp &patch = inner.inner[iface];
+                const int source_negative_axes = NegativeAxisCount(patch.sub, patch.sup);
+                const int target_negative_axes = NegativeAxisCount(patch.tar_sub, patch.tar_sup);
+                if (source_negative_axes != 1 || target_negative_axes != 1)
+                {
+                    std::cout << "#Fatal Error: DEC orientation test generated invalid 3D inner box sign format.\n";
+                    std::cout << "\tEach inner output row must have exactly one negative ijk direction.\n";
+                    std::cout << "\tsource_block=" << iblock << " target_block=" << jblock
+                              << " patch_index=" << iface << "\n";
+                    std::cout << "\tsource_box=" << BoxText(patch.sub, patch.sup)
+                              << " negative_axis_count=" << source_negative_axes << "\n";
+                    std::cout << "\ttarget_box=" << BoxText(patch.tar_sub, patch.tar_sup)
+                              << " negative_axis_count=" << target_negative_axes << "\n";
+                    exit(-1);
+                }
+            }
+        }
 }
 
 void EnsureDirectory(const std::string &path)
@@ -519,6 +568,7 @@ void DecOrientationTest::ApplyIfEnabled(Preprocess_Data_Structure *data, Param *
     }
 
     ApplyTransforms(data, selected, old_sizes, dimension);
+    ValidateInnerBoxFormat(data, dimension);
     std::cout << "\t-->DEC orientation test pass achieved " << current.keys.size()
               << "/" << target_count << " directed face-pair keys.\n";
 }
