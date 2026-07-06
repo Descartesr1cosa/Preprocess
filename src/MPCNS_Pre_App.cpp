@@ -12,6 +12,7 @@
 #include "MPCNS_Pre_IOinfo.h"
 #include "MPCNS_Pre_Parameter.h"
 #include "MPCNS_Pre_Split.h"
+#include "MPCNS_Pre_TopologyReport.h"
 #include "Pre_ACANSOutput.h"
 #include "Pre_MPCNSOutput.h"
 
@@ -92,6 +93,7 @@ public:
 
         std::cout << "---->(5) Output the grid and link information...\n";
         output_split_group_info(data.get(), &group);
+        TopologyReport::Generate(data.get(), &group, &param_);
 
         std::cout << "\t-->The grid and link information have been output ^_^ \n";
     }

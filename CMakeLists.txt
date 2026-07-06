@@ -25,6 +25,7 @@ add_executable(MAIN
     src/MPCNS_Pre_IOinfo.cpp
     src/MPCNS_Pre_Parameter.cpp
     src/MPCNS_Pre_Split.cpp
+    src/MPCNS_Pre_TopologyReport.cpp
     src/Pre_ACANSOutput.cpp
     src/Pre_MPCNSOutput.cpp
 )
