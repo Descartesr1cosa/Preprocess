@@ -88,19 +88,37 @@ double cubic_zmin = 0.0
 double cubic_zmax = 1.0
 string cubic_block_name = Fluid
 
-# Generate grd/inp/fvbnd first, then continue through the existing pipeline.
+# Cubic-sphere 自动网格开关。
+# 1: 先生成 gfilename/bfilename/ffilename，再直接进入现有加密、剖分和输出流程；0: 不生成。
 bool generate_cubic_sphere_grid = 1
+
+# 每个 cubed-sphere 面板在两个切向方向上的节点数（不是单元数）。
+# 每个面板切向单元数均为 cs_surface_points-1；6 个面板使用相同密度以保证公共边匹配。
 int cs_surface_points = 50
+
+# 是否生成 r0~r1 的六块固体球壳。0 时只生成 r1 到外边界的流体网格。
 bool cs_include_solid = 1
+
+# 固体球壳内、外半径；同时 r1 是固流界面/流体内边界半径，长度单位与计算坐标一致。
 double cs_r0 = 0.8
 double cs_r1 = 1.0
+
+# 固体 r0~r1 的径向单元数，以及从 r1 向 r0（向内）相邻单元的增厚比。
+# growth=1 为等距；>1 表示从 r0 向 r1 逐渐变薄，即靠近固流界面 r1 的单元更薄；必须大于 0。
 int cs_solid_radial_cells = 25
 double cs_solid_growth = 1.0
+
+# 写入 inp 的物理块名称；后续可由 canonical_block_name_keywords 进一步规范化。
 string cs_solid_block_name = Solid
 string cs_fluid_block_name = Fluid
 
-# Computational-domain extents. They define the center and semi-axes of an
-# asymmetric ellipsoid; the outer nodes are smoothly stretched onto it.
+# Hermite 推进线两端法向切矢长度的缩放系数，控制网格线向球面/椭球法向转弯的强度。
+# 增大可改善有限厚度下的边界正交性，但过大会增加内部弯曲；建议 1.0~1.5，允许范围 (0,2]。
+double cs_orthogonal_tangent_scale = 1.5
+
+# 外计算域的包围范围。六个值定义偏心椭球：中心=(min+max)/2，半轴=(max-min)/2。
+# 椭球必须完整包住 r=r1 球面；为区分 Farfield/Outflow，x 范围必须满足 xmin<0<xmax。
+# 外表面节点由球心射线与椭球求交得到，因此位于椭球上但切向间距允许非均匀，以减少内部弯曲。
 double cs_outer_xmin = -12.0
 double cs_outer_xmax = 4.0
 double cs_outer_ymin = -10.0
@@ -108,17 +126,19 @@ double cs_outer_ymax = 10.0
 double cs_outer_zmin = -10.0
 double cs_outer_zmax = 10.0
 
-# Fluid radial coordinate: 0 is r1, 1 is the farfield. Growth is the
-# ratio between consecutive outward cell widths within each segment.
-int cs_fluid_segments = 3
-double cs_fluid_segment_1_end = 0.12
-int cs_fluid_segment_1_cells = 12
-double cs_fluid_segment_1_growth = 1.08
-double cs_fluid_segment_2_end = 0.45
-int cs_fluid_segment_2_cells = 14
-double cs_fluid_segment_2_growth = 1.05
-double cs_fluid_segment_3_end = 1.0
-int cs_fluid_segment_3_cells = 18
-double cs_fluid_segment_3_growth = 1.03
+# 流体径向布点方式。1: 从 r1 按 advancing-layer 方式向外推进；0: 使用兼容的旧分段布点。
+bool cs_fluid_advance_layers = 1
+
+# 流体径向单元数。设为 0 时，根据首层厚度、最长推进线和最大增长率自动计算最少层数；
+# 设为正数时强制使用该层数，若无法在增长率阈值内到达外边界则报错。所有流体块层数相同。
+int cs_fluid_radial_cells = 0
+
+# 任意相邻流体径向单元的最大允许厚度增长比。网格只向外逐渐放粗，不在远场重新加密。
+# 越接近 1，过渡越平滑但所需径向层数越多；典型值 1.05~1.15，必须 >=1。
+double cs_fluid_max_spacing_ratio = 1.10
+
+# r=r1 处流体第一层厚度 / 固体最后一层厚度，用于保证固流界面层厚光滑过渡。
+# 1.0 表示两侧目标厚度相同；仅在包含固体且 advance_layers=1 时由固体末层自动确定基准厚度。
+double cs_interface_spacing_ratio = 1.0
 
 END_OF_FILE

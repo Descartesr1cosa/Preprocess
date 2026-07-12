@@ -32,6 +32,53 @@ Point Direction(int f,double u,double v){
     }
     double d=std::sqrt(q.x*q.x+q.y*q.y+q.z*q.z); return {q.x/d,q.y/d,q.z/d};
 }
+Point Add(const Point&a,const Point&b){return {a.x+b.x,a.y+b.y,a.z+b.z};}
+Point Sub(const Point&a,const Point&b){return {a.x-b.x,a.y-b.y,a.z-b.z};}
+Point Mul(const Point&a,double s){return {a.x*s,a.y*s,a.z*s};}
+double Dot(const Point&a,const Point&b){return a.x*b.x+a.y*b.y+a.z*b.z;}
+double Norm(const Point&a){return std::sqrt(Dot(a,a));}
+Point Unit(const Point&a){const double n=Norm(a);return {a.x/n,a.y/n,a.z/n};}
+Point Hermite(const Point&p0,const Point&p1,const Point&m0,const Point&m1,double t){
+    const double t2=t*t,t3=t2*t;
+    return Add(Add(Mul(p0,2*t3-3*t2+1),Mul(m0,t3-2*t2+t)),Add(Mul(p1,-2*t3+3*t2),Mul(m1,t3-t2)));
+}
+
+double ArcLengthParameter(const Point&p0,const Point&p1,const Point&m0,const Point&m1,double fraction){
+    if(fraction<=0)return 0;if(fraction>=1)return 1;
+    const int samples=256;double cumulative[samples+1];cumulative[0]=0;Point previous=p0;
+    for(int q=1;q<=samples;++q){const double t=double(q)/samples;Point current=Hermite(p0,p1,m0,m1,t);cumulative[q]=cumulative[q-1]+Norm(Sub(current,previous));previous=current;}
+    const double target=fraction*cumulative[samples];int hi=1;while(hi<samples&&cumulative[hi]<target)++hi;
+    const double portion=(target-cumulative[hi-1])/(cumulative[hi]-cumulative[hi-1]);return (hi-1+portion)/samples;
+}
+double HermiteLength(const Point&p0,const Point&p1,const Point&m0,const Point&m1){
+    const int samples=256;double length=0;Point previous=p0;
+    for(int q=1;q<=samples;++q){Point current=Hermite(p0,p1,m0,m1,double(q)/samples);length+=Norm(Sub(current,previous));previous=current;}return length;
+}
+Point RayEllipsoidPoint(const Point&d,double cx,double cy,double cz,double ax,double ay,double az){
+    const double aa=d.x*d.x/(ax*ax)+d.y*d.y/(ay*ay)+d.z*d.z/(az*az);
+    const double bb=-2*(cx*d.x/(ax*ax)+cy*d.y/(ay*ay)+cz*d.z/(az*az));
+    const double cc=cx*cx/(ax*ax)+cy*cy/(ay*ay)+cz*cz/(az*az)-1;
+    const double disc=bb*bb-4*aa*cc;if(disc<=0)Fatal("a cubed-sphere ray does not intersect the outer ellipsoid");
+    const double lambda=(-bb+std::sqrt(disc))/(2*aa);return Mul(d,lambda);
+}
+void CurveDefinition(const Point&d,double r1,double cx,double cy,double cz,double ax,double ay,double az,double tangent_scale,
+                     Point&p0,Point&p1,Point&m0,Point&m1){
+    p0=Mul(d,r1);p1=RayEllipsoidPoint(d,cx,cy,cz,ax,ay,az);const Point chord=Sub(p1,p0);
+    const Point outer_normal=Unit({(p1.x-cx)/(ax*ax),(p1.y-cy)/(ay*ay),(p1.z-cz)/(az*az)});const double length=Norm(chord);
+    const double l0=tangent_scale*std::max(0.15*length,std::min(1.5*length,Dot(chord,d)));
+    const double l1=tangent_scale*std::max(0.15*length,std::min(1.5*length,Dot(chord,outer_normal)));
+    m0=Mul(d,l0);m1=Mul(outer_normal,l1);
+}
+std::vector<double> AdvancingFractions(double length,int cells,double first_spacing,double max_ratio){
+    if(cells<1||first_spacing<=0||max_ratio<1)Fatal("invalid advancing-layer controls");
+    auto total=[&](double q){return std::fabs(q-1)<1e-12?first_spacing*cells:first_spacing*(std::pow(q,cells)-1)/(q-1);};
+    const double effective_ratio=1.0+0.94*(max_ratio-1.0);
+    double lo=1,hi=effective_ratio;
+    if(total(hi)+1e-12<length)Fatal("cs_fluid_radial_cells is too small for cs_fluid_max_spacing_ratio");
+    if(total(lo)>length){lo=0.01;hi=1.0;}for(int it=0;it<80;++it){const double q=.5*(lo+hi);if(total(q)<length)lo=q;else hi=q;}
+    const double q=.5*(lo+hi);std::vector<double>x(cells+1,0);double width=first_spacing,sum=0;
+    for(int i=0;i<cells;++i){sum+=width;x[i+1]=sum/length;width*=q;}x.back()=1;return x;
+}
 
 std::vector<double> Geometric(double a,double b,int cells,double growth){
     if(cells<1||!(b>a)||!(growth>0)) Fatal("each radial segment needs cells>=1, end>begin, growth>0");
@@ -42,6 +89,19 @@ std::vector<double> Geometric(double a,double b,int cells,double growth){
 }
 
 std::vector<double> FluidCoords(Param&p){
+    const bool automatic=p.HasBoo("cs_fluid_auto_spacing")&&p.GetBoo("cs_fluid_auto_spacing");
+    if(automatic){
+        const int cells=IV(p,"cs_fluid_radial_cells",44);const double limit=DV(p,"cs_fluid_max_spacing_ratio",1.10);
+        if(cells<2||limit<1.0)Fatal("automatic spacing needs cs_fluid_radial_cells>=2 and cs_fluid_max_spacing_ratio>=1");
+        std::vector<double> shape(cells),width(cells),x(cells+1,0.0);const double pi=std::acos(-1.0);double max_delta=0;
+        for(int i=0;i<cells;++i){const double s=std::sin(pi*(i+0.5)/cells);shape[i]=s*s;if(i)max_delta=std::max(max_delta,std::fabs(shape[i]-shape[i-1]));}
+        // Leave a small allowance because the final metric uses chord lengths
+        // on curved Hermite lines rather than exact parameter-space arc lengths.
+        const double effective_limit=1.0+0.95*(limit-1.0);
+        const double amplitude=max_delta>0?std::log(effective_limit)/max_delta:0;double sum=0;
+        for(int i=0;i<cells;++i){width[i]=std::exp(amplitude*shape[i]);sum+=width[i];}
+        for(int i=0;i<cells;++i)x[i+1]=x[i]+width[i]/sum;x.back()=1.0;return x;
+    }
     int count=IV(p,"cs_fluid_segments",1); if(count<1)Fatal("cs_fluid_segments must be >=1");
     std::vector<double>x(1,0); double a=0;
     for(int s=1;s<=count;++s){
@@ -65,11 +125,15 @@ Block SolidBlock(int face,int n,const std::vector<double>&r,const std::string&na
         Point d=Direction(face,std::tan(PanelAngle(i,n)),std::tan(PanelAngle(j,n)));
         b.p[Id(n,i,j,k)]={r[k]*d.x,r[k]*d.y,r[k]*d.z};} return b;
 }
-Block FluidBlock(int face,int n,const std::vector<double>&s,double r1,double cx,double cy,double cz,double ax,double ay,double az,const std::string&name){
+Block FluidBlock(int face,int n,const std::vector<double>&s,double r1,double cx,double cy,double cz,double ax,double ay,double az,double tangent_scale,
+                 bool advancing,double first_spacing,double max_ratio,const std::string&name){
     Block b={n,1,face,name,std::vector<Point>(n*n*s.size())};
-    for(int k=0;k<(int)s.size();++k){double w=Smooth(s[k]),sx=r1+w*(ax-r1),sy=r1+w*(ay-r1),sz=r1+w*(az-r1);
-        for(int j=0;j<n;++j)for(int i=0;i<n;++i){Point d=Direction(face,std::tan(PanelAngle(i,n)),std::tan(PanelAngle(j,n)));
-            b.p[Id(n,i,j,k)]={w*cx+sx*d.x,w*cy+sy*d.y,w*cz+sz*d.z};}}
+    for(int j=0;j<n;++j)for(int i=0;i<n;++i){
+        const Point d=Direction(face,std::tan(PanelAngle(i,n)),std::tan(PanelAngle(j,n)));Point p0,p1,m0,m1;
+        CurveDefinition(d,r1,cx,cy,cz,ax,ay,az,tangent_scale,p0,p1,m0,m1);
+        const std::vector<double> local=advancing?AdvancingFractions(HermiteLength(p0,p1,m0,m1),s.size()-1,first_spacing,max_ratio):s;
+        for(int k=0;k<(int)local.size();++k){const double t=ArcLengthParameter(p0,p1,m0,m1,local[k]);b.p[Id(n,i,j,k)]=Hermite(p0,p1,m0,m1,t);}
+    }
     return b;
 }
 
@@ -194,10 +258,33 @@ void CubicSphereGridGenerator::GenerateIfEnabled(Param&p){
     if(n<3||!(r1>0)||(solid&&!(r0>0&&r1>r0)))Fatal("cs_surface_points must be >=3; radii must be valid");
     if(!(cx-ax<-r1&&cx+ax>r1&&cy-ay<-r1&&cy+ay>r1&&cz-az<-r1&&cz+az>r1))Fatal("outer ellipsoid bounds must enclose the r1 sphere");
     if(CubicPeriodicGridGenerator::IsEnabled(p))Fatal("enable only one automatic grid generator");
-    std::vector<double>fluid=FluidCoords(p),sr;if(solid)sr=Geometric(r0,r1,IV(p,"cs_solid_radial_cells",12),DV(p,"cs_solid_growth",1));
+    std::vector<double>sr;
+    if(solid){
+        const double solid_growth=DV(p,"cs_solid_growth",1.0);
+        if(!(solid_growth>0.0))Fatal("cs_solid_growth must be > 0");
+        // User-facing growth is the inward coarsening ratio: values > 1
+        // make cells progressively thinner from r0 toward the interface r1.
+        sr=Geometric(r0,r1,IV(p,"cs_solid_radial_cells",12),1.0/solid_growth);
+    }
     std::vector<Block>blocks;std::vector<int>nk;
     if(solid)for(int face=0;face<6;++face){blocks.push_back(SolidBlock(face,n,sr,SV(p,"cs_solid_block_name","Solid")));nk.push_back(sr.size());}
-    for(int face=0;face<6;++face){blocks.push_back(FluidBlock(face,n,fluid,r1,cx,cy,cz,ax,ay,az,SV(p,"cs_fluid_block_name","Fluid")));nk.push_back(fluid.size());}
+    const double tangent_scale=DV(p,"cs_orthogonal_tangent_scale",1.0);
+    if(!(tangent_scale>0.0&&tangent_scale<=2.0))Fatal("cs_orthogonal_tangent_scale must be in (0,2]");
+    const bool advancing=p.HasBoo("cs_fluid_advance_layers")&&p.GetBoo("cs_fluid_advance_layers");
+    const double interface_ratio=DV(p,"cs_interface_spacing_ratio",1.0),max_ratio=DV(p,"cs_fluid_max_spacing_ratio",1.10);
+    const double first_spacing=solid?(sr.back()-sr[sr.size()-2])*interface_ratio:DV(p,"cs_fluid_first_spacing",0.02*r1);
+    std::vector<double>fluid;
+    if(advancing){
+        double longest=0;for(int face=0;face<6;++face)for(int j=0;j<n;++j)for(int i=0;i<n;++i){
+            const Point d=Direction(face,std::tan(PanelAngle(i,n)),std::tan(PanelAngle(j,n)));Point p0,p1,m0,m1;
+            CurveDefinition(d,r1,cx,cy,cz,ax,ay,az,tangent_scale,p0,p1,m0,m1);longest=std::max(longest,HermiteLength(p0,p1,m0,m1));}
+        int cells=IV(p,"cs_fluid_radial_cells",0);
+        if(cells==0){const double effective_ratio=1.0+0.94*(max_ratio-1.0);cells=1;double covered=first_spacing;
+            while(covered<longest){++cells;covered=std::fabs(effective_ratio-1)<1e-12?first_spacing*cells:first_spacing*(std::pow(effective_ratio,cells)-1)/(effective_ratio-1);}}
+        fluid.resize(cells+1);for(int k=0;k<=cells;++k)fluid[k]=double(k)/cells;
+        std::cout<<"\t   advancing layers: cells="<<cells<<", first spacing="<<first_spacing<<", max growth="<<max_ratio<<".\n";
+    }else fluid=FluidCoords(p);
+    for(int face=0;face<6;++face){blocks.push_back(FluidBlock(face,n,fluid,r1,cx,cy,cz,ax,ay,az,tangent_scale,advancing,first_spacing,max_ratio,SV(p,"cs_fluid_block_name","Fluid")));nk.push_back(fluid.size());}
     const int grid_type=IV(p,"grd_readtype",0);
     double scale=std::max(std::fabs(cx)+ax,std::max(std::fabs(cy)+ay,std::fabs(cz)+az));WriteGrid(p.GetStr("gfilename"),blocks,nk,grid_type);WriteInp(p.GetStr("bfilename"),blocks,nk,solid,scale);WriteFvbnd(p.GetStr("ffilename"));
     p.AddParam("dimension",3);if(!p.HasBoo("if_split_group_info"))p.AddParam("if_split_group_info",false);
