@@ -115,9 +115,11 @@ std::vector<double> FluidCoords(Param&p){
 
 size_t Id(int n,int i,int j,int k){return static_cast<size_t>((k*n+j)*n+i);}
 double PanelAngle(int index,int n){
-    const double quarter=std::acos(-1.0)/4.0;const int center=n/2;
-    if(index<=center)return -quarter+quarter*index/center;
-    return quarter*(index-center)/(n-1-center);
+    // A single symmetric equiangular sequence is essential at panel seams:
+    // angle(i) == -angle(n-1-i).  A piecewise sequence that forces zero into
+    // an even point count breaks reversed-index seam mappings in the interior.
+    const double quarter=std::acos(-1.0)/4.0;
+    return -quarter+2.0*quarter*index/(n-1);
 }
 Block SolidBlock(int face,int n,const std::vector<double>&r,const std::string&name){
     Block b={n,0,face,name,std::vector<Point>(n*n*r.size())};
@@ -198,25 +200,28 @@ void WriteInp(const std::string&path,const std::vector<Block>&blocks,const std::
             else if(inner&&blocks[ib].layer==1&&!solid)bc.push_back({own,true,6,{}});
             else if(outer&&blocks[ib].layer==1){
                 const int n=blocks[ib].n,k=nk[ib]-1;
-                double xmin=blocks[ib].p[Id(n,0,0,k)].x,xmax=xmin;
-                for(int j=0;j<n;++j)for(int i=0;i<n;++i){const double x=blocks[ib].p[Id(n,i,j,k)].x;xmin=std::min(xmin,x);xmax=std::max(xmax,x);}
-                const double tol=2e-12*std::max(1.0,scale);
-                if(xmin>=-tol)bc.push_back({own,true,4,{}});
-                else if(xmax<=tol)bc.push_back({own,true,6,{}});
+                std::vector<double> cell_x((n-1)*(n-1));int positive=0,negative=0;
+                for(int j=0;j<n-1;++j)for(int i=0;i<n-1;++i){
+                    const double x=.25*(blocks[ib].p[Id(n,i,j,k)].x+blocks[ib].p[Id(n,i+1,j,k)].x+
+                                         blocks[ib].p[Id(n,i,j+1,k)].x+blocks[ib].p[Id(n,i+1,j+1,k)].x);
+                    cell_x[j*(n-1)+i]=x;if(x>=0)++positive;else ++negative;
+                }
+                if(negative==0)bc.push_back({own,true,4,{}});
+                else if(positive==0)bc.push_back({own,true,6,{}});
                 else{
-                    // Select the logical direction with the larger mean x change.
-                    double ilo=0,ihi=0,jlo=0,jhi=0;
-                    for(int q=0;q<n;++q){ilo+=blocks[ib].p[Id(n,0,q,k)].x;ihi+=blocks[ib].p[Id(n,n-1,q,k)].x;jlo+=blocks[ib].p[Id(n,q,0,k)].x;jhi+=blocks[ib].p[Id(n,q,n-1,k)].x;}
-                    const int split_dim=(std::fabs(ihi-ilo)>=std::fabs(jhi-jlo))?0:1;
-                    int split=1;double nearest=std::numeric_limits<double>::max();
-                    for(int q=1;q<n-1;++q){double mean=0;for(int t=0;t<n;++t)mean+=split_dim==0?blocks[ib].p[Id(n,q,t,k)].x:blocks[ib].p[Id(n,t,q,k)].x;
-                        mean/=n;if(std::fabs(mean)<nearest){nearest=std::fabs(mean);split=q;}}
-                    Range low=own,high=own;low.hi[split_dim]=split+1;high.lo[split_dim]=split+1;
-                    double low_mean=0,high_mean=0;int low_count=0,high_count=0;
-                    for(int j=0;j<n;++j)for(int i=0;i<n;++i){const double x=blocks[ib].p[Id(n,i,j,k)].x;
-                        if((split_dim==0?i:j)<=split){low_mean+=x;++low_count;}if((split_dim==0?i:j)>=split){high_mean+=x;++high_count;}}
-                    bc.push_back({low,true,low_mean/low_count>=0?4:6,{}});
-                    bc.push_back({high,true,high_mean/high_count>=0?4:6,{}});
+                    // Find the best two-rectangle classification of surface
+                    // cells. No node is required to lie on physical x=0.
+                    double best=std::numeric_limits<double>::max();int split_dim=0,cut=1;bool low_farfield=true;
+                    for(int dim=0;dim<2;++dim)for(int c=1;c<n-1;++c)for(int orientation=0;orientation<2;++orientation){
+                        double cost=0;for(int j=0;j<n-1;++j)for(int i=0;i<n-1;++i){
+                            const bool low=(dim==0?i:j)<c;const bool predicted_far=low?(orientation==0):(orientation!=0);
+                            const double x=cell_x[j*(n-1)+i];if(predicted_far!=(x>=0))cost+=std::fabs(x);
+                        }
+                        if(cost<best){best=cost;split_dim=dim;cut=c;low_farfield=orientation==0;}
+                    }
+                    Range low=own,high=own;low.hi[split_dim]=cut+1;high.lo[split_dim]=cut+1;
+                    bc.push_back({low,true,low_farfield?4:6,{}});
+                    bc.push_back({high,true,low_farfield?6:4,{}});
                 }
             }
             else{bool found=false;for(size_t jb=0;jb<blocks.size()&&!found;++jb)if(jb!=ib)for(int tf=0;tf<6&&!found;++tf){Range tar=FaceRange(blocks[jb].n,nk[jb],tf);

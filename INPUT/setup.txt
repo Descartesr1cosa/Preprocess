@@ -94,6 +94,8 @@ bool generate_cubic_sphere_grid = 1
 
 # 每个 cubed-sphere 面板在两个切向方向上的节点数（不是单元数）。
 # 每个面板切向单元数均为 cs_surface_points-1；6 个面板使用相同密度以保证公共边匹配。
+# 奇偶点数均保持 panel seam 共形；物理边界按外 Face 单元分类，不要求存在 x=0/中心节点。
+# 只有在后处理确实需要面板中心或坐标轴端点恰好有节点时，才需要使用奇数。
 int cs_surface_points = 50
 
 # 是否生成 r0~r1 的六块固体球壳。0 时只生成 r1 到外边界的流体网格。
