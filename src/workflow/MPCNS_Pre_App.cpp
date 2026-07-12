@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "workflow/MPCNS_Pre_CubicGridGenerator.h"
+#include "workflow/MPCNS_Pre_CubicSphereGridGenerator.h"
 #include "core/MPCNS_Pre_Data.h"
 #include "partition/MPCNS_Pre_Datatrans.h"
 #include "partition/MPCNS_Pre_DecOrientationTest.h"
@@ -304,6 +305,8 @@ int PreprocessApplication::Run(int argc, char **argv)
     Param param;
     param.ReadParam(rank);
 
+    if (rank == 0)
+        CubicSphereGridGenerator::GenerateIfEnabled(param);
     if (rank == 0)
         CubicPeriodicGridGenerator::GenerateIfEnabled(param);
     mpi.Barrier();

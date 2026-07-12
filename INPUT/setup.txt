@@ -75,7 +75,7 @@ LIST==================================================================
 
 # Enable this to generate the files named by gfilename/bfilename/ffilename
 # before the normal preprocessing flow reads them.
-bool generate_cubic_periodic_grid = 1
+bool generate_cubic_periodic_grid = 0
 
 int cubic_nx = 9
 int cubic_ny = 9
@@ -87,5 +87,38 @@ double cubic_ymax = 1.0
 double cubic_zmin = 0.0
 double cubic_zmax = 1.0
 string cubic_block_name = Fluid
+
+# Generate grd/inp/fvbnd first, then continue through the existing pipeline.
+bool generate_cubic_sphere_grid = 1
+int cs_surface_points = 50
+bool cs_include_solid = 1
+double cs_r0 = 0.8
+double cs_r1 = 1.0
+int cs_solid_radial_cells = 25
+double cs_solid_growth = 1.0
+string cs_solid_block_name = Solid
+string cs_fluid_block_name = Fluid
+
+# Computational-domain extents. They define the center and semi-axes of an
+# asymmetric ellipsoid; the outer nodes are smoothly stretched onto it.
+double cs_outer_xmin = -12.0
+double cs_outer_xmax = 4.0
+double cs_outer_ymin = -10.0
+double cs_outer_ymax = 10.0
+double cs_outer_zmin = -10.0
+double cs_outer_zmax = 10.0
+
+# Fluid radial coordinate: 0 is r1, 1 is the farfield. Growth is the
+# ratio between consecutive outward cell widths within each segment.
+int cs_fluid_segments = 3
+double cs_fluid_segment_1_end = 0.12
+int cs_fluid_segment_1_cells = 12
+double cs_fluid_segment_1_growth = 1.08
+double cs_fluid_segment_2_end = 0.45
+int cs_fluid_segment_2_cells = 14
+double cs_fluid_segment_2_growth = 1.05
+double cs_fluid_segment_3_end = 1.0
+int cs_fluid_segment_3_cells = 18
+double cs_fluid_segment_3_growth = 1.03
 
 END_OF_FILE
