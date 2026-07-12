@@ -100,10 +100,27 @@ void MarkOrientation(const Block&a,Range&ra,const Block&b,Range&rb,double scale)
     if(td<0)Fatal("degenerate interface orientation");ra.lo[sd]=-ra.lo[sd];ra.hi[sd]=-ra.hi[sd];rb.lo[td]=-rb.lo[td];rb.hi[td]=-rb.hi[td];
 }
 
-void WriteGrid(const std::string&path,const std::vector<Block>&b,const std::vector<int>&nk){
-    std::ofstream f(path);if(!f)Fatal("cannot open "+path);f<<std::setprecision(16)<<b.size()<<'\n';
-    for(size_t z=0;z<b.size();++z)f<<b[z].n<<' '<<b[z].n<<' '<<nk[z]<<'\n';
-    for(auto&z:b)for(int c=0;c<3;++c)for(auto&q:z.p)f<<(c==0?q.x:(c==1?q.y:q.z))<<'\n';
+void WriteGrid(const std::string&path,const std::vector<Block>&b,const std::vector<int>&nk,int write_type){
+    if(write_type<0||write_type>2)Fatal("grd_readtype must be 0 (ASCII), 1 (unformatted), or 2 (binary)");
+    if(write_type==0){
+        std::ofstream f(path);if(!f)Fatal("cannot open "+path);f<<std::setprecision(16)<<b.size()<<'\n';
+        for(size_t z=0;z<b.size();++z)f<<b[z].n<<' '<<b[z].n<<' '<<nk[z]<<'\n';
+        for(auto&z:b)for(int c=0;c<3;++c)for(auto&q:z.p)f<<(c==0?q.x:(c==1?q.y:q.z))<<'\n';
+        return;
+    }
+    std::ofstream f(path,std::ios::binary);if(!f)Fatal("cannot open "+path);
+    const int count=static_cast<int>(b.size());
+    if(write_type==1){const int bytes=sizeof(int);f.write(reinterpret_cast<const char*>(&bytes),sizeof(bytes));}
+    f.write(reinterpret_cast<const char*>(&count),sizeof(count));
+    if(write_type==1){const int bytes=sizeof(int);f.write(reinterpret_cast<const char*>(&bytes),sizeof(bytes));const int dims_bytes=3*count*sizeof(int);f.write(reinterpret_cast<const char*>(&dims_bytes),sizeof(dims_bytes));}
+    for(size_t z=0;z<b.size();++z){const int dims[3]={b[z].n,b[z].n,nk[z]};f.write(reinterpret_cast<const char*>(dims),sizeof(dims));}
+    if(write_type==1){const int dims_bytes=3*count*sizeof(int);f.write(reinterpret_cast<const char*>(&dims_bytes),sizeof(dims_bytes));}
+    for(size_t z=0;z<b.size();++z){
+        const int data_bytes=static_cast<int>(3*b[z].p.size()*sizeof(double));
+        if(write_type==1)f.write(reinterpret_cast<const char*>(&data_bytes),sizeof(data_bytes));
+        for(int c=0;c<3;++c)for(auto&q:b[z].p){const double value=(c==0?q.x:(c==1?q.y:q.z));f.write(reinterpret_cast<const char*>(&value),sizeof(value));}
+        if(write_type==1)f.write(reinterpret_cast<const char*>(&data_bytes),sizeof(data_bytes));
+    }
 }
 void WriteInp(const std::string&path,const std::vector<Block>&blocks,const std::vector<int>&nk,bool solid,double scale){
     std::ofstream f(path);if(!f)Fatal("cannot open "+path);f<<"# multi-block equiangular cubed-sphere grid\n"<<blocks.size()<<'\n';
@@ -168,7 +185,8 @@ void CubicSphereGridGenerator::GenerateIfEnabled(Param&p){
     std::vector<Block>blocks;std::vector<int>nk;
     if(solid)for(int face=0;face<6;++face){blocks.push_back(SolidBlock(face,n,sr,SV(p,"cs_solid_block_name","Solid")));nk.push_back(sr.size());}
     for(int face=0;face<6;++face){blocks.push_back(FluidBlock(face,n,fluid,r1,cx,cy,cz,ax,ay,az,SV(p,"cs_fluid_block_name","Fluid")));nk.push_back(fluid.size());}
-    double scale=std::max(std::fabs(cx)+ax,std::max(std::fabs(cy)+ay,std::fabs(cz)+az));WriteGrid(p.GetStr("gfilename"),blocks,nk);WriteInp(p.GetStr("bfilename"),blocks,nk,solid,scale);WriteFvbnd(p.GetStr("ffilename"));
-    p.AddParam("grd_readtype",0);p.AddParam("dimension",3);if(!p.HasBoo("if_split_group_info"))p.AddParam("if_split_group_info",false);
-    std::cout<<"\t-->Cubed-sphere grid generated: "<<blocks.size()<<" blocks, "<<n<<"x"<<n<<" surface points per panel.\n";
+    const int grid_type=IV(p,"grd_readtype",0);
+    double scale=std::max(std::fabs(cx)+ax,std::max(std::fabs(cy)+ay,std::fabs(cz)+az));WriteGrid(p.GetStr("gfilename"),blocks,nk,grid_type);WriteInp(p.GetStr("bfilename"),blocks,nk,solid,scale);WriteFvbnd(p.GetStr("ffilename"));
+    p.AddParam("dimension",3);if(!p.HasBoo("if_split_group_info"))p.AddParam("if_split_group_info",false);
+    std::cout<<"\t-->Cubed-sphere grid generated: "<<blocks.size()<<" blocks, "<<n<<"x"<<n<<" surface points per panel, grd_readtype="<<grid_type<<".\n";
 }
