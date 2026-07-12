@@ -293,7 +293,7 @@ std::vector<BlockInfo> RewriteInpFile(const std::string &source, const std::stri
         exit(-1);
     }
 
-    std::ofstream out(target.c_str());
+    std::ofstream out(target.c_str(), std::ios::out | std::ios::trunc);
     if (!out)
     {
         std::cout << "#Fatal Error: Cannot write inp file:\t" << target << std::endl;
@@ -357,8 +357,9 @@ std::vector<BlockInfo> RewriteInpFile(const std::string &source, const std::stri
                     in >> tar_sub[d] >> tar_sup[d];
                 in >> target_block;
 
+                out << "\n";
                 for (int d = 0; d < dimension; ++d)
-                    out << "\t" << RefinedIndex(tar_sub[d], ratio) << "\t" << RefinedIndex(tar_sup[d], ratio);
+                    out << RefinedIndex(tar_sub[d], ratio) << "\t" << RefinedIndex(tar_sup[d], ratio) << "\t";
                 out << "\t" << target_block;
             }
             out << "\n";

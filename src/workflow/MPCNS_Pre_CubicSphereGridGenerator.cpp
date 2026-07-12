@@ -2,10 +2,12 @@
 #include "workflow/MPCNS_Pre_CubicGridGenerator.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -103,12 +105,12 @@ void MarkOrientation(const Block&a,Range&ra,const Block&b,Range&rb,double scale)
 void WriteGrid(const std::string&path,const std::vector<Block>&b,const std::vector<int>&nk,int write_type){
     if(write_type<0||write_type>2)Fatal("grd_readtype must be 0 (ASCII), 1 (unformatted), or 2 (binary)");
     if(write_type==0){
-        std::ofstream f(path);if(!f)Fatal("cannot open "+path);f<<std::setprecision(16)<<b.size()<<'\n';
+        std::ofstream f(path,std::ios::out|std::ios::trunc);if(!f)Fatal("cannot open "+path);f<<std::setprecision(16)<<b.size()<<'\n';
         for(size_t z=0;z<b.size();++z)f<<b[z].n<<' '<<b[z].n<<' '<<nk[z]<<'\n';
         for(auto&z:b)for(int c=0;c<3;++c)for(auto&q:z.p)f<<(c==0?q.x:(c==1?q.y:q.z))<<'\n';
-        return;
+        f.close();if(!f)Fatal("failed while writing "+path);return;
     }
-    std::ofstream f(path,std::ios::binary);if(!f)Fatal("cannot open "+path);
+    std::ofstream f(path,std::ios::out|std::ios::binary|std::ios::trunc);if(!f)Fatal("cannot open "+path);
     const int count=static_cast<int>(b.size());
     if(write_type==1){const int bytes=sizeof(int);f.write(reinterpret_cast<const char*>(&bytes),sizeof(bytes));}
     f.write(reinterpret_cast<const char*>(&count),sizeof(count));
@@ -121,28 +123,36 @@ void WriteGrid(const std::string&path,const std::vector<Block>&b,const std::vect
         for(int c=0;c<3;++c)for(auto&q:b[z].p){const double value=(c==0?q.x:(c==1?q.y:q.z));f.write(reinterpret_cast<const char*>(&value),sizeof(value));}
         if(write_type==1)f.write(reinterpret_cast<const char*>(&data_bytes),sizeof(data_bytes));
     }
+    f.close();if(!f)Fatal("failed while writing "+path);
 }
 void WriteInp(const std::string&path,const std::vector<Block>&blocks,const std::vector<int>&nk,bool solid,double scale){
-    std::ofstream f(path);if(!f)Fatal("cannot open "+path);f<<"# multi-block equiangular cubed-sphere grid\n"<<blocks.size()<<'\n';
+    const std::string temporary=path+".tmp";
+    std::ofstream f(temporary,std::ios::out|std::ios::trunc);if(!f)Fatal("cannot open "+temporary);f<<"# multi-block equiangular cubed-sphere grid\n"<<blocks.size()<<'\n';
     for(size_t ib=0;ib<blocks.size();++ib){std::vector<Boundary>bc;
         for(int face=0;face<6;++face){Range own=FaceRange(blocks[ib].n,nk[ib],face);bool inner=face==4,outer=face==5;
             if(inner&&blocks[ib].layer==0)bc.push_back({own,true,6,{}});
             else if(inner&&blocks[ib].layer==1&&!solid)bc.push_back({own,true,6,{}});
             else if(outer&&blocks[ib].layer==1){
                 const int n=blocks[ib].n,k=nk[ib]-1;
-                // Classify every surface cell using its physical center. Consecutive
-                // cells in an i-row are merged, so asymmetric ellipsoids need no
-                // artificial logical x=0 grid line.
-                for(int j=0;j<n-1;++j){
-                    int begin=0,kind=0;
-                    for(int i=0;i<n-1;++i){
-                        const double xc=0.25*(blocks[ib].p[Id(n,i,j,k)].x+blocks[ib].p[Id(n,i+1,j,k)].x+
-                                              blocks[ib].p[Id(n,i,j+1,k)].x+blocks[ib].p[Id(n,i+1,j+1,k)].x);
-                        const int next=(xc>=0.0)?4:6;
-                        if(i==0){kind=next;begin=0;}
-                        if(next!=kind){Range patch={{begin+1,j+1,nk[ib]},{i+1,j+2,nk[ib]}};bc.push_back({patch,true,kind,{}});begin=i;kind=next;}
-                        if(i==n-2){Range patch={{begin+1,j+1,nk[ib]},{n,j+2,nk[ib]}};bc.push_back({patch,true,kind,{}});}
-                    }
+                double xmin=blocks[ib].p[Id(n,0,0,k)].x,xmax=xmin;
+                for(int j=0;j<n;++j)for(int i=0;i<n;++i){const double x=blocks[ib].p[Id(n,i,j,k)].x;xmin=std::min(xmin,x);xmax=std::max(xmax,x);}
+                const double tol=2e-12*std::max(1.0,scale);
+                if(xmin>=-tol)bc.push_back({own,true,4,{}});
+                else if(xmax<=tol)bc.push_back({own,true,6,{}});
+                else{
+                    // Select the logical direction with the larger mean x change.
+                    double ilo=0,ihi=0,jlo=0,jhi=0;
+                    for(int q=0;q<n;++q){ilo+=blocks[ib].p[Id(n,0,q,k)].x;ihi+=blocks[ib].p[Id(n,n-1,q,k)].x;jlo+=blocks[ib].p[Id(n,q,0,k)].x;jhi+=blocks[ib].p[Id(n,q,n-1,k)].x;}
+                    const int split_dim=(std::fabs(ihi-ilo)>=std::fabs(jhi-jlo))?0:1;
+                    int split=1;double nearest=std::numeric_limits<double>::max();
+                    for(int q=1;q<n-1;++q){double mean=0;for(int t=0;t<n;++t)mean+=split_dim==0?blocks[ib].p[Id(n,q,t,k)].x:blocks[ib].p[Id(n,t,q,k)].x;
+                        mean/=n;if(std::fabs(mean)<nearest){nearest=std::fabs(mean);split=q;}}
+                    Range low=own,high=own;low.hi[split_dim]=split+1;high.lo[split_dim]=split+1;
+                    double low_mean=0,high_mean=0;int low_count=0,high_count=0;
+                    for(int j=0;j<n;++j)for(int i=0;i<n;++i){const double x=blocks[ib].p[Id(n,i,j,k)].x;
+                        if((split_dim==0?i:j)<=split){low_mean+=x;++low_count;}if((split_dim==0?i:j)>=split){high_mean+=x;++high_count;}}
+                    bc.push_back({low,true,low_mean/low_count>=0?4:6,{}});
+                    bc.push_back({high,true,high_mean/high_count>=0?4:6,{}});
                 }
             }
             else{bool found=false;for(size_t jb=0;jb<blocks.size()&&!found;++jb)if(jb!=ib)for(int tf=0;tf<6&&!found;++tf){Range tar=FaceRange(blocks[jb].n,nk[jb],tf);
@@ -152,15 +162,18 @@ void WriteInp(const std::string&path,const std::vector<Block>&blocks,const std::
         f<<blocks[ib].n<<' '<<blocks[ib].n<<' '<<nk[ib]<<' '<<blocks[ib].name<<'\n'<<bc.size()<<'\n';
         for(auto&q:bc){for(int d=0;d<3;++d)f<<q.own.lo[d]<<' '<<q.own.hi[d]<<' ';
             if(q.physical)f<<q.value;
-            else{f<<0;for(int d=0;d<3;++d)f<<' '<<q.target.lo[d]<<' '<<q.target.hi[d];f<<' '<<q.value;}
+            else{f<<-1<<'\n';for(int d=0;d<3;++d)f<<q.target.lo[d]<<' '<<q.target.hi[d]<<' ';f<<q.value;}
             f<<'\n';}}
+    f.close();if(!f)Fatal("failed while writing "+temporary);
+    if(std::rename(temporary.c_str(),path.c_str())!=0)Fatal("cannot replace "+path+" with completed inp file");
 }
 void WriteFvbnd(const std::string&path){
-    std::ofstream f(path);if(!f)Fatal("cannot open "+path);
+    std::ofstream f(path,std::ios::out|std::ios::trunc);if(!f)Fatal("cannot open "+path);
     f<<"FVBND 1 3\n"
      <<"No_Boundary_Condition\nSolid_Surface\nSymmetry\nFarfield\nInflow\nOutflow\nPole\n"
      <<"Generic_#1\nGeneric_#2\nGeneric_#3\n"
      <<"PERIOD-X\nperiod_X\nPERIOD-Y\nperiod_Y\nPERIOD-Z\nperiod_Z\nBOUNDARIES\n";
+    f.close();if(!f)Fatal("failed while writing "+path);
 }
 }
 
