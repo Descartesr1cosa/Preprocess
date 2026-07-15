@@ -143,4 +143,8 @@ double cs_fluid_max_spacing_ratio = 1.10
 # 1.0 表示两侧目标厚度相同；仅在包含固体且 advance_layers=1 时由固体末层自动确定基准厚度。
 double cs_interface_spacing_ratio = 1.0
 
+# 不生成固体（cs_include_solid=0）时，r=r1 壁面外侧的流体第一层物理厚度。
+# 仅在 advance_layers=1 且无固体时使用；网格的尺寸为单位，必须大于 0。
+double cs_fluid_first_spacing = 0.008
+
 END_OF_FILE

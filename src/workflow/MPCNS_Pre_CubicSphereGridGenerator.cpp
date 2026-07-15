@@ -197,7 +197,7 @@ void WriteInp(const std::string&path,const std::vector<Block>&blocks,const std::
     for(size_t ib=0;ib<blocks.size();++ib){std::vector<Boundary>bc;
         for(int face=0;face<6;++face){Range own=FaceRange(blocks[ib].n,nk[ib],face);bool inner=face==4,outer=face==5;
             if(inner&&blocks[ib].layer==0)bc.push_back({own,true,6,{}});
-            else if(inner&&blocks[ib].layer==1&&!solid)bc.push_back({own,true,6,{}});
+            else if(inner&&blocks[ib].layer==1&&!solid)bc.push_back({own,true,2,{}});
             else if(outer&&blocks[ib].layer==1){
                 const int n=blocks[ib].n,k=nk[ib]-1;
                 std::vector<double> cell_x((n-1)*(n-1));int positive=0,negative=0;
