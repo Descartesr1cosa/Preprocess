@@ -1,5 +1,6 @@
 #include "partition/MPCNS_Pre_Group.h"
 #include "core/0_CONST_DEFINE.h"
+#include "partition/MPCNS_Pre_BlockWeight.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -17,16 +18,19 @@
 
 namespace
 {
+// Set by Metis_allocate_group; BlockWeight() is the weighted cost used for balance.
+Param *g_weight_par = nullptr;
+
 struct BlockPartitionInfo
 {
     int32_t id;
-    int32_t weight;
+    int64_t weight;
     double center[3];
 };
 
-int32_t BlockWeight(const block_info &blk_info)
+int64_t BlockWeight(const block_info &blk_info)
 {
-    return blk_info.ijkmax[0] * blk_info.ijkmax[1] * blk_info.ijkmax[2];
+    return BlockAssignWeight(blk_info, g_weight_par);
 }
 
 BlockPartitionInfo MakeBlockInfo(Preprocess_Data_Structure *ptr, int32_t id)
@@ -83,6 +87,22 @@ void PrintAndValidatePartition(Preprocess_Group *group, Preprocess_Data_Structur
     for (int32_t i = 0; i < processnum; i++)
         std::cout << "\tThe Proc No. " << i << "\t has \t" << group->proc_num(i) << "\t Blocks" << std::endl;
     std::cout << "\t------------------------------------------------------------------------------------------\n";
+    {
+        std::vector<int64_t> weighted(processnum, 0);
+        int64_t total = 0;
+        for (int32_t i = 0; i < ptr->blk.Getsize1(); i++)
+        {
+            const int64_t w = BlockWeight(ptr->blk(i));
+            weighted[group->block_proc_number(i)] += w;
+            total += w;
+        }
+        const int64_t max_w = *std::max_element(weighted.begin(), weighted.end());
+        const int64_t min_w = *std::min_element(weighted.begin(), weighted.end());
+        const double avg_w = static_cast<double>(total) / processnum;
+        std::cout << "\tWeighted load (fluid_cost_weight applied): avg = " << avg_w << ", max = " << max_w
+                  << ", min = " << min_w << ", max/avg = " << (avg_w > 0.0 ? max_w / avg_w : 0.0) << std::endl;
+        std::cout << "\t------------------------------------------------------------------------------------------\n";
+    }
     for (int32_t i = 0; i < processnum; i++)
     {
         if (group->proc_num(i) == 0)
@@ -109,7 +129,7 @@ void ApplyPartition(Preprocess_Group *group, Preprocess_Data_Structure *ptr, con
         group->pro_block_index(proc).push_back(i);
         group->block_proc_index(i) = group->pro_block_index(proc).size() - 1;
         group->proc_num(proc) = group->pro_block_index(proc).size();
-        group->pro_grid_number(proc) += BlockWeight(ptr->blk(i));
+        group->pro_grid_number(proc) += static_cast<int32_t>(BlockCells(ptr->blk(i))); // raw cells, as stored in the group file
     }
 
     PrintAndValidatePartition(group, ptr, processnum);
@@ -118,7 +138,7 @@ void ApplyPartition(Preprocess_Group *group, Preprocess_Data_Structure *ptr, con
 std::vector<int32_t> GreedyPartition(Preprocess_Data_Structure *ptr, int32_t processnum)
 {
     std::vector<int32_t> part(ptr->blk.Getsize1(), 0);
-    std::vector<int32_t> load(processnum, 0);
+    std::vector<int64_t> load(processnum, 0);
     for (int32_t blk_index = 0; blk_index < ptr->blk.Getsize1(); blk_index++)
     {
         int32_t proc = 0;
@@ -129,6 +149,31 @@ std::vector<int32_t> GreedyPartition(Preprocess_Data_Structure *ptr, int32_t pro
         }
         part[blk_index] = proc;
         load[proc] += BlockWeight(ptr->blk(blk_index));
+    }
+    return part;
+}
+
+// Longest-processing-time-first: blocks in descending weight, each to the least
+// loaded process.  Best balance for a given block set; ignores block locality.
+std::vector<int32_t> LptPartition(Preprocess_Data_Structure *ptr, int32_t processnum)
+{
+    std::vector<int32_t> order(ptr->blk.Getsize1());
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](int32_t a, int32_t b) {
+        return BlockWeight(ptr->blk(a)) > BlockWeight(ptr->blk(b));
+    });
+    std::vector<int32_t> part(ptr->blk.Getsize1(), 0);
+    std::vector<int64_t> load(processnum, 0);
+    std::vector<int32_t> count(processnum, 0);
+    for (int32_t blk_index : order)
+    {
+        int32_t proc = 0;
+        for (int32_t p = 1; p < processnum; p++)
+            if (load[p] < load[proc])
+                proc = p;
+        part[blk_index] = proc;
+        load[proc] += BlockWeight(ptr->blk(blk_index));
+        count[proc]++;
     }
     return part;
 }
@@ -292,6 +337,7 @@ std::string GetPartitionMethod(Param *par)
 void Preprocess_Group::Metis_allocate_group(Preprocess_Data_Structure *ptr, Param *par)
 {
     int32_t processnum = par->GetInt("proc_num");
+    g_weight_par = par;
     if (processnum == 1)
     {
         ApplyPartition(this, ptr, std::vector<int32_t>(ptr->blk.Getsize1(), 0), processnum);
@@ -302,6 +348,11 @@ void Preprocess_Group::Metis_allocate_group(Preprocess_Data_Structure *ptr, Para
     if (partition_method == "greedy")
     {
         ApplyPartition(this, ptr, GreedyPartition(ptr, processnum), processnum);
+        return;
+    }
+    if (partition_method == "lpt")
+    {
+        ApplyPartition(this, ptr, LptPartition(ptr, processnum), processnum);
         return;
     }
     if (partition_method == "morton")
@@ -378,7 +429,7 @@ void Preprocess_Group::Metis_allocate_group(Preprocess_Data_Structure *ptr, Para
         {
             part[i] = 0;
             xadj[i] = count;
-            vwgt[i] = ptr->blk(i).ijkmax[0] * ptr->blk(i).ijkmax[1] * ptr->blk(i).ijkmax[2];
+            vwgt[i] = static_cast<int32_t>(BlockWeight(ptr->blk(i)));
             for (int32_t j = 0; j < ptr->blk.Getsize1(); j++)
             {
                 if (j == i)

@@ -1,5 +1,7 @@
 #include "partition/MPCNS_Pre_Split.h"
+#include "partition/MPCNS_Pre_BlockWeight.h"
 #include <math.h>
+#include <algorithm>
 // #include "preprocess_output.h"
 
 namespace
@@ -134,24 +136,27 @@ void Split(Preprocess_Data_Structure *ptr, Param *par)
     int32_t proc_num = par->GetInt("proc_num");
     int32_t dimension = par->GetInt("dimension");
     double split_scale = par->GetDou("split_scale");
+    // All thresholds are in weighted cells (fluid cells cost fluid_cost_weight,
+    // solid cells 1.0); with the default weight 1.0 this is the plain cell count.
     int32_t averge_grid = 0, max_grid = 0, this_block_number = 0;
     do
     {
         stop_the_loop = true;
-        // 统计此时的平均网格数量
-        averge_grid = 0;
+        // 统计此时的平均(加权)网格数量
+        int64_t total_weighted = 0;
         for (int32_t iblock = 0; iblock < ptr->blk.Getsize1(); iblock++)
-            averge_grid += ptr->blk(iblock).ijkmax[0] * ptr->blk(iblock).ijkmax[1] * ptr->blk(iblock).ijkmax[2];
-        averge_grid = (int32_t)(averge_grid / proc_num);
+            total_weighted += BlockWeightedCells(ptr->blk(iblock), par);
+        averge_grid = (int32_t)(total_weighted / proc_num);
         // 允许的最大网格数量，凡是大于该网格量的都剖分
         max_grid = averge_grid * (split_scale + 1.0);
         //---------------------------------------------------------------------------
         int32_t split_index;
         for (int32_t iblock = 0; iblock < ptr->blk.Getsize1(); iblock++)
         {
-            if (ptr->blk(iblock).ijkmax[0] * ptr->blk(iblock).ijkmax[1] * ptr->blk(iblock).ijkmax[2] > max_grid)
+            const int64_t weighted = BlockWeightedCells(ptr->blk(iblock), par);
+            if (weighted > max_grid)
             {
-                this_block_number = ptr->blk(iblock).ijkmax[0] * ptr->blk(iblock).ijkmax[1] * ptr->blk(iblock).ijkmax[2];
+                this_block_number = (int32_t)weighted;
                 split_index = iblock;
                 stop_the_loop = false;
                 break;
@@ -161,6 +166,9 @@ void Split(Preprocess_Data_Structure *ptr, Param *par)
             break;
         //---------------------------------------------------------------------------
         bool split_success = false;
+        // split_*_location size the pieces in cells, not weighted cells
+        const double cost_factor = BlockCostFactor(ptr->blk(split_index), par);
+        const int32_t max_grid_cells = std::max<int32_t>(1, (int32_t)(max_grid / cost_factor));
         if (this_block_number < 2 * max_grid)
         {
             // 1~2倍平均网格点数则《尝试》采用最大维中点二分
@@ -169,17 +177,17 @@ void Split(Preprocess_Data_Structure *ptr, Param *par)
         else if (this_block_number < 4 * max_grid)
         {
             // 2~4倍平均网格点数则《尝试》采用一维剖分，返回剖分方向和位置
-            split_success = split_1D_location(ptr, par, split_index, max_grid);
+            split_success = split_1D_location(ptr, par, split_index, max_grid_cells);
         }
         else if (this_block_number < 8 * max_grid || dimension == 2)
         {
             // 4~8倍平均网格点数则《尝试》采用二维剖分，子进程中直接修改剖分方向与位置
-            split_success = split_2D_location(ptr, par, split_index, max_grid);
+            split_success = split_2D_location(ptr, par, split_index, max_grid_cells);
         }
         else if (dimension == 3)
         {
             // 8倍以上的平均网格点数切维数为3则《尝试》采用三维剖分，子进程中直接修改剖分方向与位置
-            split_success = split_3D_location(ptr, par, split_index, max_grid);
+            split_success = split_3D_location(ptr, par, split_index, max_grid_cells);
         }
         if (!split_success)
         {

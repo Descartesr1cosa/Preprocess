@@ -4,6 +4,24 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <sys/stat.h>
+namespace
+{
+const std::string &PreprocessInputDir()
+{
+    static const std::string dir = []()
+    {
+        struct stat info;
+        if (stat("./INPUT/setup.txt", &info) == 0)
+            return std::string("./INPUT/");
+        if (stat("./setup.txt", &info) == 0)
+            return std::string("./");
+        return std::string("./INPUT/");
+    }();
+    return dir;
+}
+} // namespace
+
 namespace
 {
 void EnsureDirectory(const std::string &path)
@@ -69,7 +87,9 @@ void Param::ReadParam(int32_t _myid)
 
     //---------------------------------------------------------------------------------------------
     // Modify for #Preprocess# only
-    std::string filename = "./INPUT/setup.txt";
+    // Input directory: ./INPUT/ if it holds setup.txt (original layout), otherwise
+    // the current directory when it holds setup.txt (e.g. Run/CASE/Grid).
+    std::string filename = PreprocessInputDir() + "setup.txt";
     input_file.push_back(filename);
     //---------------------------------------------------------------------------------------------
     // Test for the location
@@ -457,9 +477,9 @@ void Param::ReadFile(std::string &filename, std::map<std::string, int> keywordma
 
 void Param::Pre_Process()
 {
-    AddParam("gfilename", "./INPUT/" + GetStr("gfilename"));
-    AddParam("bfilename", "./INPUT/" + GetStr("bfilename"));
-    AddParam("ffilename", "./INPUT/" + GetStr("ffilename"));
+    AddParam("gfilename", PreprocessInputDir() + GetStr("gfilename"));
+    AddParam("bfilename", PreprocessInputDir() + GetStr("bfilename"));
+    AddParam("ffilename", PreprocessInputDir() + GetStr("ffilename"));
 
     // Modify for #Preprocess# only
     if (GetInt("myid") == 0)
