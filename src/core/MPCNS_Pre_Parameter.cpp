@@ -2,6 +2,7 @@
 #include "core/0_CONST_DEFINE.h"
 #include <cerrno>
 #include <sys/stat.h>
+#include <fstream>
 #include <sys/types.h>
 
 #include <sys/stat.h>
@@ -19,6 +20,38 @@ const std::string &PreprocessInputDir()
         return std::string("./INPUT/");
     }();
     return dir;
+}
+} // namespace
+
+#include <sstream>
+namespace
+{
+// Minimal extraction of a number (or true/false) following `"key":` after `from`.
+bool JsonValueAfter(const std::string &text, size_t from, const std::string &key, double &value)
+{
+    const std::string token = "\"" + key + "\"";
+    size_t pos = text.find(token, from);
+    if (pos == std::string::npos)
+        return false;
+    pos = text.find(':', pos);
+    if (pos == std::string::npos)
+        return false;
+    ++pos;
+    while (pos < text.size() && (text[pos] == ' ' || text[pos] == '\t' || text[pos] == '\n'))
+        ++pos;
+    if (text.compare(pos, 4, "true") == 0)
+    {
+        value = 1.0;
+        return true;
+    }
+    if (text.compare(pos, 5, "false") == 0)
+    {
+        value = 0.0;
+        return true;
+    }
+    std::istringstream stream(text.substr(pos, 64));
+    stream >> value;
+    return !stream.fail();
 }
 } // namespace
 
@@ -477,6 +510,44 @@ void Param::ReadFile(std::string &filename, std::map<std::string, int> keywordma
 
 void Param::Pre_Process()
 {
+    // Optional: take the fluid/solid cost model from a solver trial run
+    // (MercuryZ4 with profile_run = 1 writes DATA/partition_profile.json).
+    if (HasBoo("use_cost_profile") && GetBoo("use_cost_profile"))
+    {
+        const std::string path = HasStr("cost_profile_json") ? GetStr("cost_profile_json")
+                                                             : std::string("partition_profile.json");
+        std::ifstream in(path);
+        if (!in)
+        {
+            std::cout << "#Fatal Error: use_cost_profile = 1 but cannot open cost_profile_json: " << path << std::endl;
+            exit(-1);
+        }
+        std::stringstream buffer;
+        buffer << in.rdbuf();
+        const std::string text = buffer.str();
+        const size_t rec = text.find("\"recommended\"");
+        double weight = 0.0, overhead = 0.0, ghost = 0.0, good = 1.0;
+        if (rec == std::string::npos || !JsonValueAfter(text, rec, "fluid_cost_weight", weight) ||
+            !JsonValueAfter(text, rec, "block_cost_overhead", overhead) ||
+            !JsonValueAfter(text, rec, "cost_ghost_layers", ghost))
+        {
+            std::cout << "#Fatal Error: " << path << " has no recommended cost model\n";
+            exit(-1);
+        }
+        JsonValueAfter(text, rec, "well_conditioned", good);
+        AddParam("fluid_cost_weight", weight);
+        AddParam("block_cost_overhead", overhead);
+        AddParam("cost_ghost_layers", static_cast<int>(ghost));
+        if (GetInt("myid") == 0)
+        {
+            std::cout << "\t-->Cost model from " << path << ": fluid_cost_weight = " << weight
+                      << ", block_cost_overhead = " << overhead << ", cost_ghost_layers = " << static_cast<int>(ghost) << "\n";
+            if (good == 0.0)
+                std::cout << "\tWarning!\tThe trial-run fit was flagged as weakly conditioned; "
+                             "repeat the trial run on the new partition and re-process.\n";
+        }
+    }
+
     AddParam("gfilename", PreprocessInputDir() + GetStr("gfilename"));
     AddParam("bfilename", PreprocessInputDir() + GetStr("bfilename"));
     AddParam("ffilename", PreprocessInputDir() + GetStr("ffilename"));

@@ -31,12 +31,29 @@ inline int64_t BlockWeightedCells(const block_info &blk, Param *par)
     return static_cast<int64_t>(std::llround(BlockCells(blk) * BlockCostFactor(blk, par)));
 }
 
-// Weight used when assigning blocks to processes: weighted cells plus a fixed
-// per-block overhead (ghost layers, halo bookkeeping), in solid-cell equivalents.
-// block_cost_overhead defaults to 0 (pure weighted cell count).
+// Ghost-inclusive cell count of a block: prod_d (cells_d + 2*g) over the active
+// dimensions, where cells_d = ijkmax[d]-1 and g = cost_ghost_layers.  The solver
+// trial run shows per-rank compute follows this allocated volume, which also
+// explains the apparent fixed per-block cost.  With g = 0 (default) the legacy
+// plain ijkmax product is used.
+inline double BlockAllocCells(const block_info &blk, Param *par)
+{
+    const int g = (par != nullptr && par->HasInt("cost_ghost_layers")) ? par->GetInt("cost_ghost_layers") : 0;
+    if (g <= 0)
+        return static_cast<double>(BlockCells(blk));
+    const int dim = (par != nullptr && par->HasInt("dimension")) ? par->GetInt("dimension") : 3;
+    double cells = 1.0;
+    for (int d = 0; d < 3; ++d)
+        cells *= (d < dim) ? static_cast<double>(blk.ijkmax[d] - 1 + 2 * g) : 1.0;
+    return cells;
+}
+
+// Weight used when assigning blocks to processes: cost factor times the
+// (ghost-inclusive) cell count plus a fixed per-block overhead, in solid-cell
+// equivalents.  block_cost_overhead defaults to 0.
 inline int64_t BlockAssignWeight(const block_info &blk, Param *par)
 {
     const double overhead =
         (par != nullptr && par->HasDou("block_cost_overhead")) ? par->GetDou("block_cost_overhead") : 0.0;
-    return BlockWeightedCells(blk, par) + static_cast<int64_t>(std::llround(overhead));
+    return static_cast<int64_t>(std::llround(BlockAllocCells(blk, par) * BlockCostFactor(blk, par) + overhead));
 }
